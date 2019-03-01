@@ -1,0 +1,61 @@
+<!--
+  ~ Copyright 2017 ThoughtWorks, Inc.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  ~
+  ~ This file incorporates changes by @continuumsecurity
+  -->
+
+<div class="row">
+    <div class="columns medium-4 large-3">
+        <label ng-class="{'is-invalid-label': GOINPUTNAME[ec2_ami].$error.server}">Amazon Machine Image (AMI):<span class="asterix">*</span></label>
+        <input ng-class="{'is-invalid-input': GOINPUTNAME[ec2_ami].$error.server}" type="text" ng-model="ec2_ami" ng-required="true" maxlength="40"/>
+        <span class="form_error form-error" ng-class="{'is-visible': GOINPUTNAME[ec2_ami].$error.server}"
+              ng-show="GOINPUTNAME[ec2_ami].$error.server">{{GOINPUTNAME[ec2_ami].$error.server}}</span>
+    </div>
+
+    <div class="columns medium-4 large-3">
+        <label ng-class="{'is-invalid-label': GOINPUTNAME[ec2_instance_type].$error.server}">Instance type:<span class="asterix">*</span></label>
+        <input ng-class="{'is-invalid-input': GOINPUTNAME[ec2_instance_type].$error.server}" type="text" ng-model="ec2_instance_type" ng-required="true" maxlength="20"/>
+        <span class="form_error form-error" ng-class="{'is-visible': GOINPUTNAME[ec2_instance_type].$error.server}"
+              ng-show="GOINPUTNAME[ec2_instance_type].$error.server">{{GOINPUTNAME[ec2_instance_type].$error.server}}</span>
+    </div>
+
+    <div class="columns medium-4 large-3">
+        <label ng-class="{'is-invalid-label': GOINPUTNAME[ec2_sg].$error.server}">Security groups (comma-separated):<span class="asterix">*</span></label>
+        <input ng-class="{'is-invalid-input': GOINPUTNAME[ec2_sg].$error.server}" type="text" ng-model="ec2_sg" ng-required="true"/>
+        <span class="form_error form-error" ng-class="{'is-visible': GOINPUTNAME[ec2_sg].$error.server}"
+              ng-show="GOINPUTNAME[ec2_sg].$error.server">{{GOINPUTNAME[ec2_sg].$error.server}}</span>
+    </div>
+
+    <div class="columns medium-4 large-3">
+        <label ng-class="{'is-invalid-label': GOINPUTNAME[ec2_subnets].$error.server}">Subnets (comma-separated):<span class="asterix">*</span></label>
+        <input ng-class="{'is-invalid-input': GOINPUTNAME[ec2_subnets].$error.server}" type="text" ng-model="ec2_subnets" ng-required="true"/>
+        <span class="form_error form-error" ng-class="{'is-visible': GOINPUTNAME[ec2_subnets].$error.server}"
+              ng-show="GOINPUTNAME[ec2_subnets].$error.server">{{GOINPUTNAME[ec2_subnets].$error.server}}</span>
+    </div>
+
+    <div class="columns medium-4 large-3">
+        <label ng-class="{'is-invalid-label': GOINPUTNAME[ec2_key].$error.server}">Key pair name:<span class="asterix">*</span></label>
+        <input ng-class="{'is-invalid-input': GOINPUTNAME[ec2_key].$error.server}" type="text" ng-model="ec2_key" ng-required="true" maxlength="100"/>
+        <span class="form_error form-error" ng-class="{'is-visible': GOINPUTNAME[ec2_key].$error.server}"
+              ng-show="GOINPUTNAME[ec2_key].$error.server">{{GOINPUTNAME[ec2_key].$error.server}}</span>
+    </div>
+
+    <div class="columns medium-4 large-3">
+        <label ng-class="{'is-invalid-label': GOINPUTNAME[ec2_user_data].$error.server}">User data:</label>
+        <textarea ng-class="{'is-invalid-input': GOINPUTNAME[ec2_user_data].$error.server}" type="text" rows="3" ng-model="ec2_user_data" ng-required="false"/>
+        <span class="form_error form-error" ng-class="{'is-visible': GOINPUTNAME[ec2_user_data].$error.server}"
+              ng-show="GOINPUTNAME[ec2_user_data].$error.server">{{GOINPUTNAME[ec2_user_data].$error.server}}</span>
+    </div>
+</div>
