@@ -34,7 +34,7 @@ public class Test {
         properties.put("ec2_ami", Properties.AMI_ID);
         properties.put("ec2_instance_type", Properties.TYPE);
         properties.put("ec2_sg", Properties.SG_IDS);
-        properties.put("ec2_subnet", Properties.SUBNETS);
+        properties.put("ec2_subnets", Properties.SUBNETS);
         properties.put("ec2_key", Properties.KEY);
         properties.put("ec2_user_data", Properties.USERDATA);
 

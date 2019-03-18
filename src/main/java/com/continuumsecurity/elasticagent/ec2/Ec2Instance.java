@@ -35,12 +35,12 @@ import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.ec2.Ec2Client;
-import software.amazon.awssdk.services.ec2.model.CreateTagsRequest;
 import software.amazon.awssdk.services.ec2.model.Instance;
 import software.amazon.awssdk.services.ec2.model.InstanceType;
 import software.amazon.awssdk.services.ec2.model.RunInstancesRequest;
 import software.amazon.awssdk.services.ec2.model.RunInstancesResponse;
 import software.amazon.awssdk.services.ec2.model.Tag;
+import software.amazon.awssdk.services.ec2.model.TagSpecification;
 import software.amazon.awssdk.services.ec2.model.TerminateInstancesRequest;
 
 import static com.continuumsecurity.elasticagent.ec2.Ec2Plugin.LOG;
@@ -108,6 +108,72 @@ public class Ec2Instance {
         // try create instance for each AZ if error
         while (!result && i < items.size()) {
             try {
+                Tag tagName = Tag.builder()
+                        .key("Name")
+                        .value("GoCD EA "
+                                + request.jobIdentifier().getPipelineName()
+                                + "-" + request.jobIdentifier().getPipelineCounter().toString()
+                                + "-" + request.jobIdentifier().getStageName()
+                                + "-" + request.jobIdentifier().getJobName())
+                        .build();
+                Tag tagType = Tag.builder()
+                        .key("Type")
+                        .value(Constants.ELASTIC_AGENT_TAG)
+                        .build();
+                Tag tagPipelineName = Tag.builder()
+                        .key("pipelineName")
+                        .value(request.jobIdentifier().getPipelineName())
+                        .build();
+                Tag tagPipelineCounter = Tag.builder()
+                        .key("pipelineCounter")
+                        .value(request.jobIdentifier().getPipelineCounter().toString())
+                        .build();
+                Tag tagPipelineLabel = Tag.builder()
+                        .key("pipelineLabel")
+                        .value(request.jobIdentifier().getPipelineLabel())
+                        .build();
+                Tag tagStageName = Tag.builder()
+                        .key("stageName")
+                        .value(request.jobIdentifier().getStageName())
+                        .build();
+                Tag tagStageCounter = Tag.builder()
+                        .key("stageCounter")
+                        .value(request.jobIdentifier().getStageCounter())
+                        .build();
+                Tag tagJobName = Tag.builder()
+                        .key("jobName")
+                        .value(request.jobIdentifier().getJobName())
+                        .build();
+                Tag tagJobId = Tag.builder()
+                        .key("jobId")
+                        .value(request.jobIdentifier().getJobId().toString())
+                        .build();
+                Tag tagJsonJobIdentifier = Tag.builder()
+                        .key("JsonJobIdentifier")
+                        .value(request.jobIdentifier().toJson())
+                        .build();
+                Tag tagJsonProperties = Tag.builder()
+                        .key("JsonProperties")
+                        .value(request.propertiesToJson())
+                        .build();
+
+                TagSpecification tagSpecification = TagSpecification.builder()
+                        .tags(
+                                tagName,
+                                tagType,
+                                tagPipelineName,
+                                tagPipelineCounter,
+                                tagPipelineLabel,
+                                tagStageName,
+                                tagStageCounter,
+                                tagJobName,
+                                tagJobId,
+                                tagJsonJobIdentifier,
+                                tagJsonProperties
+                        )
+                        .resourceType("instance")
+                        .build();
+
                 RunInstancesRequest runInstancesRequest = RunInstancesRequest.builder()
                         .imageId(request.properties().get("ec2_ami"))
                         .instanceType(InstanceType.fromValue(request.properties().get("ec2_instance_type")))
@@ -117,6 +183,7 @@ public class Ec2Instance {
                         .securityGroupIds(request.properties().get("ec2_sg"))
                         .subnetId(items.get(i))
                         .userData(encodeBase64String(userdata.getBytes()))
+                        .tagSpecifications(tagSpecification)
                         .build();
 
                 response = ec2.runInstances(runInstancesRequest);
@@ -133,81 +200,6 @@ public class Ec2Instance {
 
         if (i < items.size() && response != null) {
             Instance instance = response.instances().get(0);
-
-            Tag tagName = Tag.builder()
-                    .key("Name")
-                    .value("GoCD EA "
-                            + request.jobIdentifier().getPipelineName()
-                            + "-" + request.jobIdentifier().getPipelineCounter().toString()
-                            + "-" + request.jobIdentifier().getStageName()
-                            + "-" + request.jobIdentifier().getJobName())
-                    .build();
-            Tag tagType = Tag.builder()
-                    .key("Type")
-                    .value(Constants.ELASTIC_AGENT_TAG)
-                    .build();
-            Tag tagPipelineName = Tag.builder()
-                    .key("pipelineName")
-                    .value(request.jobIdentifier().getPipelineName())
-                    .build();
-            Tag tagPipelineCounter = Tag.builder()
-                    .key("pipelineCounter")
-                    .value(request.jobIdentifier().getPipelineCounter().toString())
-                    .build();
-            Tag tagPipelineLabel = Tag.builder()
-                    .key("pipelineLabel")
-                    .value(request.jobIdentifier().getPipelineLabel())
-                    .build();
-            Tag tagStageName = Tag.builder()
-                    .key("stageName")
-                    .value(request.jobIdentifier().getStageName())
-                    .build();
-            Tag tagStageCounter = Tag.builder()
-                    .key("stageCounter")
-                    .value(request.jobIdentifier().getStageCounter())
-                    .build();
-            Tag tagJobName = Tag.builder()
-                    .key("jobName")
-                    .value(request.jobIdentifier().getJobName())
-                    .build();
-            Tag tagJobId = Tag.builder()
-                    .key("jobId")
-                    .value(request.jobIdentifier().getJobId().toString())
-                    .build();
-            Tag tagJsonJobIdentifier = Tag.builder()
-                    .key("JsonJobIdentifier")
-                    .value(request.jobIdentifier().toJson())
-                    .build();
-            Tag tagJsonProperties = Tag.builder()
-                    .key("JsonProperties")
-                    .value(request.propertiesToJson())
-                    .build();
-
-            CreateTagsRequest tag_request = CreateTagsRequest.builder()
-                    .tags(
-                            tagName,
-                            tagType,
-                            tagPipelineName,
-                            tagPipelineCounter,
-                            tagPipelineLabel,
-                            tagStageName,
-                            tagStageCounter,
-                            tagJobName,
-                            tagJobId,
-                            tagJsonJobIdentifier,
-                            tagJsonProperties
-                    )
-                    .resources(instance.instanceId())
-                    .build();
-            try {
-                ec2.createTags(tag_request);
-
-                LOG.info("Successfully assigned tags to the instance " + instance.instanceId());
-            } catch (AwsServiceException | SdkClientException e) {
-                LOG.error("Could not create tags for the instance", e);
-            } finally {
-                ec2.close();
-            }
 
             return new Ec2Instance(instance.instanceId(), Date.from(instance.launchTime()), request.properties(), request.environment(), request.jobIdentifier());
         } else {
