@@ -153,10 +153,6 @@ public class Ec2Instance {
                         .key("JsonJobIdentifier")
                         .value(request.jobIdentifier().toJson())
                         .build();
-                Tag tagJsonProperties = Tag.builder()
-                        .key("JsonProperties")
-                        .value(request.propertiesToJson())
-                        .build();
 
                 TagSpecification tagSpecification = TagSpecification.builder()
                         .tags(
@@ -169,8 +165,7 @@ public class Ec2Instance {
                                 tagStageCounter,
                                 tagJobName,
                                 tagJobId,
-                                tagJsonJobIdentifier,
-                                tagJsonProperties
+                                tagJsonJobIdentifier
                         )
                         .resourceType("instance")
                         .build();
