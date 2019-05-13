@@ -97,16 +97,17 @@ public class Ec2Instance {
 
         userdata += request.properties().get("ec2_user_data");
 
-        List<String> items = Arrays.asList(request.properties().get("ec2_subnets").split("\\s*,\\s*"));
+        List<String> security_groups = Arrays.asList(request.properties().get("ec2_sg").split("\\s*,\\s*"));
+        List<String> subnets = Arrays.asList(request.properties().get("ec2_subnets").split("\\s*,\\s*"));
         // subnet is assigned randomly from all the subnets configured
-        Collections.shuffle(items);
+        Collections.shuffle(subnets);
 
         boolean result = false;
         int i = 0;
 
         RunInstancesResponse response = null;
         // try create instance for each AZ if error
-        while (!result && i < items.size()) {
+        while (!result && i < subnets.size()) {
             try {
                 Tag tagName = Tag.builder()
                         .key("Name")
@@ -180,8 +181,8 @@ public class Ec2Instance {
                         .maxCount(1)
                         .minCount(1)
                         .keyName(request.properties().get("ec2_key"))
-                        .securityGroupIds(request.properties().get("ec2_sg"))
-                        .subnetId(items.get(i))
+                        .securityGroupIds(security_groups)
+                        .subnetId(subnets.get(i))
                         .userData(encodeBase64String(userdata.getBytes()))
                         .tagSpecifications(tagSpecification)
                         .build();
@@ -198,7 +199,7 @@ public class Ec2Instance {
             }
         }
 
-        if (i < items.size() && response != null) {
+        if (i < subnets.size() && response != null) {
             Instance instance = response.instances().get(0);
 
             return new Ec2Instance(instance.instanceId(), Date.from(instance.launchTime()), request.properties(), request.environment(), request.jobIdentifier());
