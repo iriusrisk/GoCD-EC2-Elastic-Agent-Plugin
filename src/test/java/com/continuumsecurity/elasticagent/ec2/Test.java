@@ -117,7 +117,6 @@ public class Test {
                 for (Tag tag : instance.tags()) {
                     System.out.println(tag.toString());
                 }
-                Map<String, String> pr = CreateAgentRequest.propertiesFromJson(getTag(instance.tags(), "JsonProperties"));
                 JobIdentifier ji = JobIdentifier.fromJson(getTag(instance.tags(),"JsonJobIdentifier"));
                 System.out.println("");
             }
