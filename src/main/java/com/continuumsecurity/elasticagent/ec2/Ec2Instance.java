@@ -20,28 +20,16 @@ package com.continuumsecurity.elasticagent.ec2;
 
 import com.continuumsecurity.elasticagent.ec2.models.JobIdentifier;
 import com.continuumsecurity.elasticagent.ec2.requests.CreateAgentRequest;
-
 import org.joda.time.DateTime;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.ec2.Ec2Client;
-import software.amazon.awssdk.services.ec2.model.Instance;
-import software.amazon.awssdk.services.ec2.model.InstanceType;
-import software.amazon.awssdk.services.ec2.model.RunInstancesRequest;
-import software.amazon.awssdk.services.ec2.model.RunInstancesResponse;
-import software.amazon.awssdk.services.ec2.model.Tag;
-import software.amazon.awssdk.services.ec2.model.TagSpecification;
-import software.amazon.awssdk.services.ec2.model.TerminateInstancesRequest;
+import software.amazon.awssdk.services.ec2.model.*;
+
+import java.util.*;
 
 import static com.continuumsecurity.elasticagent.ec2.Ec2Plugin.LOG;
 import static org.apache.commons.codec.binary.Base64.encodeBase64String;
@@ -95,7 +83,9 @@ public class Ec2Instance {
                 "chown -R go:go /usr/share/go-agent/\n" +
                 "systemctl start go-agent.service\n";
 
-        userdata += request.properties().get("ec2_user_data");
+        if (request.properties().get("ec2_user_data") != null) {
+            userdata += request.properties().get("ec2_user_data") + "\n";
+        }
 
         List<String> security_groups = Arrays.asList(request.properties().get("ec2_sg").split("\\s*,\\s*"));
         List<String> subnets = Arrays.asList(request.properties().get("ec2_subnets").split("\\s*,\\s*"));
@@ -118,7 +108,7 @@ public class Ec2Instance {
                                 + "-" + request.jobIdentifier().getJobName())
                         .build();
                 Tag tagType = Tag.builder()
-                        .key("Type")
+                        .key("type")
                         .value(Constants.ELASTIC_AGENT_TAG)
                         .build();
                 Tag tagPipelineName = Tag.builder()
