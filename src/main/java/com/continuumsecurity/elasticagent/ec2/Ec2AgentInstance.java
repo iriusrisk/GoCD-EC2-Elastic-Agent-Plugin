@@ -23,27 +23,18 @@ import com.continuumsecurity.elasticagent.ec2.models.InstanceStatusReport;
 import com.continuumsecurity.elasticagent.ec2.models.JobIdentifier;
 import com.continuumsecurity.elasticagent.ec2.models.StatusReport;
 import com.continuumsecurity.elasticagent.ec2.requests.CreateAgentRequest;
-
+import org.apache.commons.lang3.StringUtils;
 import org.joda.time.Period;
-
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Semaphore;
-import java.util.stream.Collectors;
-
-import javax.annotation.Nullable;
-
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.services.ec2.Ec2Client;
-import software.amazon.awssdk.services.ec2.model.DescribeInstancesRequest;
-import software.amazon.awssdk.services.ec2.model.DescribeInstancesResponse;
-import software.amazon.awssdk.services.ec2.model.Filter;
-import software.amazon.awssdk.services.ec2.model.Instance;
-import software.amazon.awssdk.services.ec2.model.Reservation;
-import software.amazon.awssdk.services.ec2.model.Tag;
+import software.amazon.awssdk.services.ec2.model.*;
+
+import javax.annotation.Nullable;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Semaphore;
+import java.util.stream.Collectors;
 
 import static com.continuumsecurity.elasticagent.ec2.Ec2Plugin.LOG;
 
@@ -170,7 +161,7 @@ public class Ec2AgentInstance implements AgentInstance<Ec2Instance> {
                                             .values("pending", "running")
                                             .build(),
                                     Filter.builder()
-                                            .name("tag:Type")
+                                            .name("tag:type")
                                             .values(Constants.ELASTIC_AGENT_TAG)
                                             .build()
                             )
@@ -179,9 +170,16 @@ public class Ec2AgentInstance implements AgentInstance<Ec2Instance> {
 
             for (Reservation reservation : response.reservations()) {
                 for (Instance instance : reservation.instances()) {
+                    Map<String, String> properties = new HashMap<>();
+                    properties.put("ec2_ami", instance.imageId());
+                    properties.put("ec2_instance_type", instance.instanceTypeAsString());
+                    properties.put("ec2_sg", StringUtils.join(instance.securityGroups(), ","));
+                    properties.put("ec2_subnets", instance.subnetId());
+                    properties.put("ec2_key", instance.keyName());
+
                     register(new Ec2Instance(instance.instanceId(),
                             Date.from(instance.launchTime()),
-                            CreateAgentRequest.propertiesFromJson(getTag(instance.tags(), "JsonProperties")),
+                            properties,
                             getTag(instance.tags(), "environment"),
                             JobIdentifier.fromJson(getTag(instance.tags(), "JsonJobIdentifier")))
                     );
@@ -226,7 +224,7 @@ public class Ec2AgentInstance implements AgentInstance<Ec2Instance> {
                                         .values("pending", "running", "shutting-down", "stopping", "stopped")
                                         .build(),
                                 Filter.builder()
-                                        .name("tag:Type")
+                                        .name("tag:type")
                                         .values(Constants.ELASTIC_AGENT_TAG)
                                         .build()
                         )
@@ -283,7 +281,7 @@ public class Ec2AgentInstance implements AgentInstance<Ec2Instance> {
                                         .values(agentInstance.id())
                                         .build(),
                                 Filter.builder()
-                                        .name("tag:Type")
+                                        .name("tag:type")
                                         .values(Constants.ELASTIC_AGENT_TAG)
                                         .build()
                         )

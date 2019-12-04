@@ -20,28 +20,16 @@ package com.continuumsecurity.elasticagent.ec2;
 
 import com.continuumsecurity.elasticagent.ec2.models.JobIdentifier;
 import com.continuumsecurity.elasticagent.ec2.requests.CreateAgentRequest;
-
 import org.joda.time.DateTime;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.ec2.Ec2Client;
-import software.amazon.awssdk.services.ec2.model.CreateTagsRequest;
-import software.amazon.awssdk.services.ec2.model.Instance;
-import software.amazon.awssdk.services.ec2.model.InstanceType;
-import software.amazon.awssdk.services.ec2.model.RunInstancesRequest;
-import software.amazon.awssdk.services.ec2.model.RunInstancesResponse;
-import software.amazon.awssdk.services.ec2.model.Tag;
-import software.amazon.awssdk.services.ec2.model.TerminateInstancesRequest;
+import software.amazon.awssdk.services.ec2.model.*;
+
+import java.util.*;
 
 import static com.continuumsecurity.elasticagent.ec2.Ec2Plugin.LOG;
 import static org.apache.commons.codec.binary.Base64.encodeBase64String;
@@ -95,28 +83,93 @@ public class Ec2Instance {
                 "chown -R go:go /usr/share/go-agent/\n" +
                 "systemctl start go-agent.service\n";
 
-        userdata += request.properties().get("ec2_user_data");
+        if (request.properties().get("ec2_user_data") != null) {
+            userdata += request.properties().get("ec2_user_data") + "\n";
+        }
 
-        List<String> items = Arrays.asList(request.properties().get("ec2_subnets").split("\\s*,\\s*"));
+        List<String> security_groups = Arrays.asList(request.properties().get("ec2_sg").split("\\s*,\\s*"));
+        List<String> subnets = Arrays.asList(request.properties().get("ec2_subnets").split("\\s*,\\s*"));
         // subnet is assigned randomly from all the subnets configured
-        Collections.shuffle(items);
+        Collections.shuffle(subnets);
 
         boolean result = false;
         int i = 0;
 
         RunInstancesResponse response = null;
         // try create instance for each AZ if error
-        while (!result && i < items.size()) {
+        while (!result && i < subnets.size()) {
             try {
+                Tag tagName = Tag.builder()
+                        .key("Name")
+                        .value("GoCD EA "
+                                + request.jobIdentifier().getPipelineName()
+                                + "-" + request.jobIdentifier().getPipelineCounter().toString()
+                                + "-" + request.jobIdentifier().getStageName()
+                                + "-" + request.jobIdentifier().getJobName())
+                        .build();
+                Tag tagType = Tag.builder()
+                        .key("type")
+                        .value(Constants.ELASTIC_AGENT_TAG)
+                        .build();
+                Tag tagPipelineName = Tag.builder()
+                        .key("pipelineName")
+                        .value(request.jobIdentifier().getPipelineName())
+                        .build();
+                Tag tagPipelineCounter = Tag.builder()
+                        .key("pipelineCounter")
+                        .value(request.jobIdentifier().getPipelineCounter().toString())
+                        .build();
+                Tag tagPipelineLabel = Tag.builder()
+                        .key("pipelineLabel")
+                        .value(request.jobIdentifier().getPipelineLabel())
+                        .build();
+                Tag tagStageName = Tag.builder()
+                        .key("stageName")
+                        .value(request.jobIdentifier().getStageName())
+                        .build();
+                Tag tagStageCounter = Tag.builder()
+                        .key("stageCounter")
+                        .value(request.jobIdentifier().getStageCounter())
+                        .build();
+                Tag tagJobName = Tag.builder()
+                        .key("jobName")
+                        .value(request.jobIdentifier().getJobName())
+                        .build();
+                Tag tagJobId = Tag.builder()
+                        .key("jobId")
+                        .value(request.jobIdentifier().getJobId().toString())
+                        .build();
+                Tag tagJsonJobIdentifier = Tag.builder()
+                        .key("JsonJobIdentifier")
+                        .value(request.jobIdentifier().toJson())
+                        .build();
+
+                TagSpecification tagSpecification = TagSpecification.builder()
+                        .tags(
+                                tagName,
+                                tagType,
+                                tagPipelineName,
+                                tagPipelineCounter,
+                                tagPipelineLabel,
+                                tagStageName,
+                                tagStageCounter,
+                                tagJobName,
+                                tagJobId,
+                                tagJsonJobIdentifier
+                        )
+                        .resourceType("instance")
+                        .build();
+
                 RunInstancesRequest runInstancesRequest = RunInstancesRequest.builder()
                         .imageId(request.properties().get("ec2_ami"))
                         .instanceType(InstanceType.fromValue(request.properties().get("ec2_instance_type")))
                         .maxCount(1)
                         .minCount(1)
                         .keyName(request.properties().get("ec2_key"))
-                        .securityGroupIds(request.properties().get("ec2_sg"))
-                        .subnetId(items.get(i))
+                        .securityGroupIds(security_groups)
+                        .subnetId(subnets.get(i))
                         .userData(encodeBase64String(userdata.getBytes()))
+                        .tagSpecifications(tagSpecification)
                         .build();
 
                 response = ec2.runInstances(runInstancesRequest);
@@ -131,83 +184,8 @@ public class Ec2Instance {
             }
         }
 
-        if (i < items.size() && response != null) {
+        if (i < subnets.size() && response != null) {
             Instance instance = response.instances().get(0);
-
-            Tag tagName = Tag.builder()
-                    .key("Name")
-                    .value("GoCD EA "
-                            + request.jobIdentifier().getPipelineName()
-                            + "-" + request.jobIdentifier().getPipelineCounter().toString()
-                            + "-" + request.jobIdentifier().getStageName()
-                            + "-" + request.jobIdentifier().getJobName())
-                    .build();
-            Tag tagType = Tag.builder()
-                    .key("Type")
-                    .value(Constants.ELASTIC_AGENT_TAG)
-                    .build();
-            Tag tagPipelineName = Tag.builder()
-                    .key("pipelineName")
-                    .value(request.jobIdentifier().getPipelineName())
-                    .build();
-            Tag tagPipelineCounter = Tag.builder()
-                    .key("pipelineCounter")
-                    .value(request.jobIdentifier().getPipelineCounter().toString())
-                    .build();
-            Tag tagPipelineLabel = Tag.builder()
-                    .key("pipelineLabel")
-                    .value(request.jobIdentifier().getPipelineLabel())
-                    .build();
-            Tag tagStageName = Tag.builder()
-                    .key("stageName")
-                    .value(request.jobIdentifier().getStageName())
-                    .build();
-            Tag tagStageCounter = Tag.builder()
-                    .key("stageCounter")
-                    .value(request.jobIdentifier().getStageCounter())
-                    .build();
-            Tag tagJobName = Tag.builder()
-                    .key("jobName")
-                    .value(request.jobIdentifier().getJobName())
-                    .build();
-            Tag tagJobId = Tag.builder()
-                    .key("jobId")
-                    .value(request.jobIdentifier().getJobId().toString())
-                    .build();
-            Tag tagJsonJobIdentifier = Tag.builder()
-                    .key("JsonJobIdentifier")
-                    .value(request.jobIdentifier().toJson())
-                    .build();
-            Tag tagJsonProperties = Tag.builder()
-                    .key("JsonProperties")
-                    .value(request.propertiesToJson())
-                    .build();
-
-            CreateTagsRequest tag_request = CreateTagsRequest.builder()
-                    .tags(
-                            tagName,
-                            tagType,
-                            tagPipelineName,
-                            tagPipelineCounter,
-                            tagPipelineLabel,
-                            tagStageName,
-                            tagStageCounter,
-                            tagJobName,
-                            tagJobId,
-                            tagJsonJobIdentifier,
-                            tagJsonProperties
-                    )
-                    .resources(instance.instanceId())
-                    .build();
-            try {
-                ec2.createTags(tag_request);
-
-                LOG.info("Successfully assigned tags to the instance " + instance.instanceId());
-            } catch (AwsServiceException | SdkClientException e) {
-                LOG.error("Could not create tags for the instance", e);
-            } finally {
-                ec2.close();
-            }
 
             return new Ec2Instance(instance.instanceId(), Date.from(instance.launchTime()), request.properties(), request.environment(), request.jobIdentifier());
         } else {

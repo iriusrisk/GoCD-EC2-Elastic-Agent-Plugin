@@ -18,11 +18,10 @@
 
 package com.continuumsecurity.elasticagent.ec2;
 
+import com.continuumsecurity.elasticagent.ec2.utils.Util;
 import com.thoughtworks.go.plugin.api.GoPluginIdentifier;
 
 import java.util.Collections;
-
-import com.continuumsecurity.elasticagent.ec2.utils.Util;
 
 public interface Constants {
     String PLUGIN_ID = Util.pluginId();
@@ -36,7 +35,7 @@ public interface Constants {
     String SERVER_INFO_PROCESSOR_API_VERSION = "1.0";
     String EXTENSION_API_VERSION = "4.0";
 
-    String ELASTIC_AGENT_TAG = "GOCD ELASTIC AGENT";
+    String ELASTIC_AGENT_TAG = "gocd-elastic-agent";
 
     // the identifier of this plugin
     GoPluginIdentifier PLUGIN_IDENTIFIER = new GoPluginIdentifier(EXTENSION_TYPE, Collections.singletonList(EXTENSION_API_VERSION));
