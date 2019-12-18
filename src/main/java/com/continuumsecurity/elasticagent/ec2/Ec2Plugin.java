@@ -147,13 +147,9 @@ public class Ec2Plugin implements GoPlugin {
     }
 
     private void refreshInstancesForCluster(ClusterProfileProperties clusterProfileProperties) throws Exception {
-        Ec2AgentInstances agentInstances = getAgentInstancesForCluster(clusterProfileProperties);
+        Ec2AgentInstances agentInstances = clusterSpecificAgentInstances.getOrDefault(clusterProfileProperties.uuid(), new Ec2AgentInstances());
         agentInstances.refreshAll(clusterProfileProperties);
         clusterSpecificAgentInstances.put(clusterProfileProperties.uuid(), agentInstances);
-    }
-
-    private Ec2AgentInstances getAgentInstancesForCluster(ClusterProfileProperties clusterProfileProperties) {
-        return clusterSpecificAgentInstances.get(clusterProfileProperties.uuid());
     }
 
     private AgentInstances<Ec2Instance> getAgentInstancesFor(ClusterProfileProperties clusterProfileProperties) {
