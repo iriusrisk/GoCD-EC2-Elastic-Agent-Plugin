@@ -20,7 +20,6 @@ package com.continuumsecurity.elasticagent.ec2.executors;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
-
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
@@ -62,7 +61,7 @@ public class Metadata {
     }
 
     protected String doValidate(String input) {
-        if (metadata != null && metadata.required) {
+        if (isRequired()) {
             if (StringUtils.isBlank(input)) {
                 return this.key + " must not be blank.";
             }
@@ -73,6 +72,10 @@ public class Metadata {
 
     public String getKey() {
         return key;
+    }
+
+    public boolean isRequired() {
+        return metadata.required;
     }
 
     public static class ProfileMetadata {

@@ -18,21 +18,20 @@
 
 package com.continuumsecurity.elasticagent.ec2;
 
-import com.google.gson.Gson;
-
+import com.continuumsecurity.elasticagent.ec2.models.JobIdentifier;
 import com.continuumsecurity.elasticagent.ec2.models.ServerInfo;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.thoughtworks.go.plugin.api.GoApplicationAccessor;
 import com.thoughtworks.go.plugin.api.request.DefaultGoApiRequest;
 import com.thoughtworks.go.plugin.api.response.GoApiResponse;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.continuumsecurity.elasticagent.ec2.Constants.ELASTIC_PROCESSOR_API_VERSION;
-import static com.continuumsecurity.elasticagent.ec2.Constants.PLUGIN_IDENTIFIER;
-import static com.continuumsecurity.elasticagent.ec2.Constants.PLUGIN_SETTINGS_PROCESSOR_API_VERSION;
-import static com.continuumsecurity.elasticagent.ec2.Constants.SERVER_INFO_PROCESSOR_API_VERSION;
+import static com.continuumsecurity.elasticagent.ec2.Constants.*;
 import static com.continuumsecurity.elasticagent.ec2.Ec2Plugin.LOG;
 
 
@@ -47,7 +46,7 @@ public class PluginRequest {
     }
 
     public PluginSettings getPluginSettings() throws ServerRequestFailedException {
-        DefaultGoApiRequest request = new DefaultGoApiRequest(Constants.REQUEST_SERVER_GET_PLUGIN_SETTINGS, PLUGIN_SETTINGS_PROCESSOR_API_VERSION, PLUGIN_IDENTIFIER);
+        DefaultGoApiRequest request = new DefaultGoApiRequest(Constants.REQUEST_SERVER_INFO, SERVER_INFO_PROCESSOR_API_VERSION, PLUGIN_IDENTIFIER);
         GoApiResponse response = accessor.submit(request);
 
         if (response.responseCode() != 200) {
@@ -121,6 +120,25 @@ public class PluginRequest {
         // check status
         if (response.responseCode() != 200) {
             LOG.error("The server sent an unexpected status code " + response.responseCode() + " with the response body " + response.responseBody());
+        }
+    }
+
+    public void appendToConsoleLog(JobIdentifier jobIdentifier, String text) {
+        Map<String, String> requestMap = new HashMap<>();
+        requestMap.put("pipelineName", jobIdentifier.getPipelineName());
+        requestMap.put("pipelineCounter", String.valueOf(jobIdentifier.getPipelineCounter()));
+        requestMap.put("stageName", jobIdentifier.getStageName());
+        requestMap.put("stageCounter", jobIdentifier.getStageCounter());
+        requestMap.put("jobName", jobIdentifier.getJobName());
+        requestMap.put("text", text);
+
+        DefaultGoApiRequest request = new DefaultGoApiRequest(Constants.REQUEST_SERVER_APPEND_TO_CONSOLE_LOG, SERVER_INFO_PROCESSOR_API_VERSION, PLUGIN_IDENTIFIER);
+        request.setRequestBody(new GsonBuilder().create().toJson(requestMap));
+
+        GoApiResponse response = accessor.submit(request);
+
+        if (response.responseCode() != 200) {
+            LOG.error("Failed to append to console log for " + jobIdentifier.represent() + " with text: " + text);
         }
     }
 }

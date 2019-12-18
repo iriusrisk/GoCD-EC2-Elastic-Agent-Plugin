@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
 
 import static com.continuumsecurity.elasticagent.ec2.Ec2Plugin.LOG;
 
-public class Ec2AgentInstance implements AgentInstance<Ec2Instance> {
+public class Ec2AgentInstances implements AgentInstances<Ec2Instance> {
 
     private final ConcurrentHashMap<String, Ec2Instance> instances = new ConcurrentHashMap<>();
     private List<JobIdentifier> jobsWaitingForAgentCreation = new ArrayList<>();
@@ -46,24 +46,34 @@ public class Ec2AgentInstance implements AgentInstance<Ec2Instance> {
     public Clock clock = Clock.DEFAULT;
 
     private final Semaphore semaphore = new Semaphore(0, true);
-
     @Override
-    public Ec2Instance create(CreateAgentRequest request, PluginSettings settings) throws Exception {
+    public Ec2Instance create(CreateAgentRequest request, PluginRequest pluginRequest, ConsoleLogAppender consoleLogAppender) {
+
+        LOG.info(String.format("[Create Agent] Processing create agent request for %s", request.jobIdentifier()));
+        ClusterProfileProperties settings = request.getClusterProfileProperties();
 
         final Integer maxAllowedAgents = settings.getMaxElasticAgents();
-        if (!jobsWaitingForAgentCreation.contains(request.jobIdentifier())) {
-            jobsWaitingForAgentCreation.add(request.jobIdentifier());
-        }
         synchronized (instances) {
+            if (!jobsWaitingForAgentCreation.contains(request.jobIdentifier())) {
+                jobsWaitingForAgentCreation.add(request.jobIdentifier());
+            }
             doWithLockOnSemaphore(new SetupSemaphore(maxAllowedAgents, instances, semaphore));
+            List<Map<String, String>> messages = new ArrayList<>();
             if (semaphore.tryAcquire()) {
-                Ec2Instance instance = Ec2Instance.create(request, settings);
+                pluginRequest.addServerHealthMessage(messages);
+                Ec2Instance instance = Ec2Instance.create(request, settings, consoleLogAppender);
                 register(instance);
                 jobsWaitingForAgentCreation.remove(request.jobIdentifier());
                 return instance;
             } else {
                 String maxLimitExceededMessage = String.format("The number of instances currently running is currently at the maximum permissible limit, \"%d\". Not creating more instances for jobs: %s.", instances.size(), jobsWaitingForAgentCreation.stream().map(JobIdentifier::getRepresentation)
                         .collect(Collectors.joining(", ")));
+                Map<String, String> messageToBeAdded = new HashMap<>();
+                messageToBeAdded.put("type", "warning");
+                messageToBeAdded.put("message", maxLimitExceededMessage);
+                messages.add(messageToBeAdded);
+                pluginRequest.addServerHealthMessage(messages);
+                consoleLogAppender.accept(maxLimitExceededMessage);
                 LOG.warn(maxLimitExceededMessage);
                 return null;
             }
@@ -77,15 +87,20 @@ public class Ec2AgentInstance implements AgentInstance<Ec2Instance> {
     }
 
     @Override
-    public void terminate(String agentId, PluginSettings settings) throws Exception {
+    public void terminate(String agentId, ClusterProfileProperties clusterProfileProperties) throws Exception {
         Ec2Instance instance = instances.get(agentId);
         if (instance != null) {
-            instance.terminate(settings);
+            instance.terminate(clusterProfileProperties);
         } else {
             LOG.warn("Requested to terminate an instance that does not exist " + agentId);
         }
 
-        doWithLockOnSemaphore(semaphore::release);
+        doWithLockOnSemaphore(new Runnable() {
+            @Override
+            public void run() {
+                semaphore.release();
+            }
+        });
 
         synchronized (instances) {
             instances.remove(agentId);
@@ -93,22 +108,22 @@ public class Ec2AgentInstance implements AgentInstance<Ec2Instance> {
     }
 
     @Override
-    public void terminateUnregisteredInstances(PluginSettings settings, Agents agents) throws Exception {
+    public void terminateUnregisteredInstances(ClusterProfileProperties clusterProfileProperties, Agents agents) throws Exception {
 
-        Ec2AgentInstance toTerminate = unregisteredAfterTimeout(settings, agents);
+        Ec2AgentInstances toTerminate = unregisteredAfterTimeout(clusterProfileProperties, agents);
         if (toTerminate.instances.isEmpty()) {
             return;
         }
 
         LOG.warn("Terminating instances that did not register " + toTerminate.instances.keySet());
         for (Ec2Instance instance : toTerminate.instances.values()) {
-            terminate(instance.id(), settings);
+            terminate(instance.id(), clusterProfileProperties);
         }
     }
 
-    private Ec2AgentInstance unregisteredAfterTimeout(PluginSettings settings, Agents knownAgents) throws Exception {
+    private Ec2AgentInstances unregisteredAfterTimeout(PluginSettings settings, Agents knownAgents) throws Exception {
         Period period = settings.getAutoRegisterPeriod();
-        Ec2AgentInstance unregisteredContainers = new Ec2AgentInstance();
+        Ec2AgentInstances unregisteredContainers = new Ec2AgentInstances();
 
         for (String instanceId : instances.keySet()) {
             if (knownAgents.containsAgentWithId(instanceId)) {
@@ -125,7 +140,7 @@ public class Ec2AgentInstance implements AgentInstance<Ec2Instance> {
     }
 
     @Override
-    public Agents instancesCreatedAfterTimeout(PluginSettings settings, Agents agents) {
+    public Agents instancesCreatedAfterTimeout(ClusterProfileProperties clusterProfileProperties, Agents agents) {
         ArrayList<Agent> oldAgents = new ArrayList<>();
         for (Agent agent : agents.agents()) {
             Ec2Instance instance = instances.get(agent.elasticAgentId());
@@ -133,7 +148,7 @@ public class Ec2AgentInstance implements AgentInstance<Ec2Instance> {
                 continue;
             }
 
-            if (clock.now().isAfter(instance.createdAt().plus(settings.getAutoRegisterPeriod()))) {
+            if (clock.now().isAfter(instance.createdAt().plus(clusterProfileProperties.getAutoRegisterPeriod()))) {
                 oldAgents.add(agent);
             }
         }
@@ -141,15 +156,15 @@ public class Ec2AgentInstance implements AgentInstance<Ec2Instance> {
     }
 
     @Override
-    public void refreshAll(PluginRequest pluginRequest) throws Exception {
+    public void refreshAll(ClusterProfileProperties clusterProfileProperties) throws Exception {
         if (!refreshed) {
             AwsBasicCredentials awsCredentials = AwsBasicCredentials.create(
-                    pluginRequest.getPluginSettings().getAwsAccessKeyId(),
-                    pluginRequest.getPluginSettings().getAwsSecretAccessKey()
+                    clusterProfileProperties.getAwsAccessKeyId(),
+                    clusterProfileProperties.getAwsSecretAccessKey()
             );
 
             Ec2Client ec2 = Ec2Client.builder()
-                    .region(pluginRequest.getPluginSettings().getAwsRegion())
+                    .region(clusterProfileProperties.getAwsRegion())
                     .credentialsProvider(StaticCredentialsProvider.create(awsCredentials))
                     .build();
 
@@ -180,7 +195,6 @@ public class Ec2AgentInstance implements AgentInstance<Ec2Instance> {
                     register(new Ec2Instance(instance.instanceId(),
                             Date.from(instance.launchTime()),
                             properties,
-                            getTag(instance.tags(), "environment"),
                             JobIdentifier.fromJson(getTag(instance.tags(), "JsonJobIdentifier")))
                     );
                     LOG.debug("Refreshed instance " + instance.instanceId());
@@ -199,20 +213,20 @@ public class Ec2AgentInstance implements AgentInstance<Ec2Instance> {
     public Ec2Instance find(JobIdentifier jobIdentifier) {
         return instances.values()
                 .stream()
-                .filter(x -> x.jobIdentifier().equals(jobIdentifier))
+                .filter(x -> x.getJobIdentifier().equals(jobIdentifier))
                 .findFirst()
                 .orElse(null);
     }
 
     @Override
-    public StatusReport getStatusReport(PluginSettings pluginSettings) throws Exception {
+    public StatusReport getStatusReport(ClusterProfileProperties clusterProfileProperties) throws Exception {
         AwsBasicCredentials awsCredentials = AwsBasicCredentials.create(
-                pluginSettings.getAwsAccessKeyId(),
-                pluginSettings.getAwsSecretAccessKey()
+                clusterProfileProperties.getAwsAccessKeyId(),
+                clusterProfileProperties.getAwsSecretAccessKey()
         );
 
         Ec2Client ec2 = Ec2Client.builder()
-                .region(pluginSettings.getAwsRegion())
+                .region(clusterProfileProperties.getAwsRegion())
                 .credentialsProvider(StaticCredentialsProvider.create(awsCredentials))
                 .build();
 
@@ -262,14 +276,14 @@ public class Ec2AgentInstance implements AgentInstance<Ec2Instance> {
     }
 
     @Override
-    public AgentStatusReport getAgentStatusReport(PluginSettings pluginSettings, Ec2Instance agentInstance) {
+    public AgentStatusReport getAgentStatusReport(ClusterProfileProperties clusterProfileProperties, Ec2Instance agentInstance) {
         AwsBasicCredentials awsCredentials = AwsBasicCredentials.create(
-                pluginSettings.getAwsAccessKeyId(),
-                pluginSettings.getAwsSecretAccessKey()
+                clusterProfileProperties.getAwsAccessKeyId(),
+                clusterProfileProperties.getAwsSecretAccessKey()
         );
 
         Ec2Client ec2 = Ec2Client.builder()
-                .region(pluginSettings.getAwsRegion())
+                .region(clusterProfileProperties.getAwsRegion())
                 .credentialsProvider(StaticCredentialsProvider.create(awsCredentials))
                 .build();
 
@@ -291,7 +305,7 @@ public class Ec2AgentInstance implements AgentInstance<Ec2Instance> {
         Instance instance = response.reservations().get(0).instances().get(0);
 
         return new AgentStatusReport(
-                agentInstance.jobIdentifier(),
+                agentInstance.getJobIdentifier(),
                 instance,
                 agentInstance.createdAt().getMillis()
         );

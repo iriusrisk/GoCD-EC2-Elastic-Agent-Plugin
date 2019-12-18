@@ -18,32 +18,35 @@
 
 package com.continuumsecurity.elasticagent.ec2.executors;
 
+import com.continuumsecurity.elasticagent.ec2.AgentInstances;
+import com.continuumsecurity.elasticagent.ec2.Ec2Instance;
 import com.continuumsecurity.elasticagent.ec2.RequestExecutor;
 import com.continuumsecurity.elasticagent.ec2.requests.ShouldAssignWorkRequest;
 import com.thoughtworks.go.plugin.api.response.DefaultGoPluginApiResponse;
 import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
 
-import com.continuumsecurity.elasticagent.ec2.AgentInstance;
-import com.continuumsecurity.elasticagent.ec2.Ec2Instance;
+import static com.continuumsecurity.elasticagent.ec2.Ec2Plugin.LOG;
 
 public class ShouldAssignWorkRequestExecutor implements RequestExecutor {
-    private final AgentInstance<Ec2Instance> agentInstances;
+    private final AgentInstances<Ec2Instance> agentInstances;
     private final ShouldAssignWorkRequest request;
 
-    public ShouldAssignWorkRequestExecutor(ShouldAssignWorkRequest request, AgentInstance<Ec2Instance> agentInstances) {
+    public ShouldAssignWorkRequestExecutor(ShouldAssignWorkRequest request, AgentInstances<Ec2Instance> agentInstances) {
         this.request = request;
         this.agentInstances = agentInstances;
     }
 
     @Override
     public GoPluginApiResponse execute() {
+        LOG.info(String.format("[Should Assign Work] Processing should assign work request for job %s and agent %s", request.jobIdentifier(), request.agent()));
+
         Ec2Instance instance = agentInstances.find(request.agent().elasticAgentId());
 
         if (instance == null) {
             return DefaultGoPluginApiResponse.success("false");
         }
 
-        if (instance.jobIdentifier().equals(request.jobIdentifier())) {
+        if (instance.getJobIdentifier().equals(request.jobIdentifier())) {
             return DefaultGoPluginApiResponse.success("true");
         }
 

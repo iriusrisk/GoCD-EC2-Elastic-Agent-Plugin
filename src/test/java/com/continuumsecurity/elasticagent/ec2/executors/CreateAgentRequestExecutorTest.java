@@ -18,28 +18,52 @@
 
 package com.continuumsecurity.elasticagent.ec2.executors;
 
-import com.continuumsecurity.elasticagent.ec2.PluginRequest;
-import com.continuumsecurity.elasticagent.ec2.PluginSettings;
+import com.continuumsecurity.elasticagent.ec2.*;
+import com.continuumsecurity.elasticagent.ec2.models.JobIdentifier;
 import com.continuumsecurity.elasticagent.ec2.requests.CreateAgentRequest;
-
 import org.junit.jupiter.api.Test;
 
-import com.continuumsecurity.elasticagent.ec2.AgentInstance;
+import java.util.HashMap;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.*;
 
 public class CreateAgentRequestExecutorTest {
+
     @Test
     public void shouldAskDockerContainersToCreateAnAgent() throws Exception {
-        CreateAgentRequest request = new CreateAgentRequest();
-        AgentInstance agentInstances = mock(AgentInstance.class);
+        final HashMap<String, String> elasticAgentProfileProperties = new HashMap<>();
+        elasticAgentProfileProperties.put("Image", "image1");
+        final JobIdentifier jobIdentifier = new JobIdentifier("p1", 1L, "l1", "s1", "1", "j1", 1L);
+        CreateAgentRequest request = new CreateAgentRequest("key1", elasticAgentProfileProperties, jobIdentifier, new HashMap<>());
+
+        AgentInstances<Ec2Instance> agentInstances = mock(Ec2AgentInstances.class);
         PluginRequest pluginRequest = mock(PluginRequest.class);
-        PluginSettings settings = mock(PluginSettings.class);
-        when(pluginRequest.getPluginSettings()).thenReturn(settings);
         new CreateAgentRequestExecutor(request, agentInstances, pluginRequest).execute();
 
-        verify(agentInstances).create(request, settings);
+        verify(agentInstances).create(eq(request), eq(pluginRequest), any(ConsoleLogAppender.class));
+        verify(pluginRequest).appendToConsoleLog(eq(jobIdentifier), contains("Received request to create an instance for"));
+    }
+
+    @Test
+    public void shouldLogErrorMessageToConsoleIfAgentCreateFails() throws Exception {
+        final HashMap<String, String> elasticAgentProfileProperties = new HashMap<>();
+        elasticAgentProfileProperties.put("Image", "image1");
+        final JobIdentifier jobIdentifier = new JobIdentifier("p1", 1L, "l1", "s1", "1", "j1", 1L);
+        CreateAgentRequest request = new CreateAgentRequest("key1", elasticAgentProfileProperties, jobIdentifier, new HashMap<>());
+
+        AgentInstances<Ec2Instance> agentInstances = mock(Ec2AgentInstances.class);
+        PluginRequest pluginRequest = mock(PluginRequest.class);
+        when(agentInstances.create(eq(request), eq(pluginRequest), any(ConsoleLogAppender.class))).thenThrow(new RuntimeException("Ouch!"));
+
+        try {
+            new CreateAgentRequestExecutor(request, agentInstances, pluginRequest).execute();
+            fail("Should have thrown an exception");
+        } catch (RuntimeException e) {
+            // expected
+        }
+
+        verify(pluginRequest).appendToConsoleLog(eq(jobIdentifier), contains("Received request to create an instance for"));
+        verify(pluginRequest).appendToConsoleLog(eq(jobIdentifier), contains("Failed while creating instance: Ouch!"));
     }
 }

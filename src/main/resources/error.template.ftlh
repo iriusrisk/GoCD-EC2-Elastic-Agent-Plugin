@@ -1,23 +1,23 @@
 <style>
-    [data-plugin-style-id="docker-elastic-agent"] .outer-container {
+    [data-plugin-style-id="ec2-elastic-agent"] .outer-container {
         display: table;
         position: absolute;
         height: calc(100vh - 119px);
         width: 100%;
     }
 
-    [data-plugin-style-id="docker-elastic-agent"] .container {
+    [data-plugin-style-id="ec2-elastic-agent"] .container {
         display: table-cell;
         vertical-align: middle;
     }
 
-    [data-plugin-style-id="docker-elastic-agent"] .error-container {
+    [data-plugin-style-id="ec2-elastic-agent"] .error-container {
         border: 1px solid #eee;
         margin-top: 15px;
         border-radius: 3px;
     }
 
-    [data-plugin-style-id="docker-elastic-agent"] .message {
+    [data-plugin-style-id="ec2-elastic-agent"] .message {
         color: #991A00;
         padding: 1rem;
         font-size: 15px;
@@ -26,16 +26,16 @@
         vertical-align: middle;
     }
 
-    [data-plugin-style-id="docker-elastic-agent"] .stacktrace {
+    [data-plugin-style-id="ec2-elastic-agent"] .stacktrace {
         height: calc(100vh - 210px);
     }
 
-    [data-plugin-style-id="docker-elastic-agent"] textarea[readonly="readonly"], textarea[readonly] {
+    [data-plugin-style-id="ec2-elastic-agent"] textarea[readonly="readonly"], textarea[readonly] {
         cursor: auto;
         margin-bottom: 0px;
     }
 
-    [data-plugin-style-id="docker-elastic-agent"] .logs {
+    [data-plugin-style-id="ec2-elastic-agent"] .logs {
         color: white;
         display: block;
         height: calc(100vh - 210px);
@@ -48,7 +48,7 @@
     }
 </style>
 
-<div data-plugin-style-id="docker-elastic-agent">
+<div data-plugin-style-id="ec2-elastic-agent">
     <div class="outer-container">
         <div class="container">
             <div class="error-container">

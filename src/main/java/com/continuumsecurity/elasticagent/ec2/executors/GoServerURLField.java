@@ -12,23 +12,22 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * This file incorporates changes by @continuumsecurity
  */
 
 package com.continuumsecurity.elasticagent.ec2.executors;
 
-import org.apache.http.client.utils.URIBuilder;
-
+import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 
-import static com.continuumsecurity.elasticagent.ec2.executors.GetPluginConfigurationExecutor.GO_SERVER_URL;
+import static com.continuumsecurity.elasticagent.ec2.executors.GetClusterProfileMetadataExecutor.GO_SERVER_URL;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 public class GoServerURLField extends Field {
 
     public GoServerURLField(String displayOrder) {
-        super(GO_SERVER_URL, "Go Server URL", null, true, false, displayOrder);
+        super(GO_SERVER_URL.getKey(), "Go Server URL", null, true, false, displayOrder);
     }
 
     @Override
@@ -37,28 +36,29 @@ public class GoServerURLField extends Field {
             return this.displayName + " must not be blank.";
         }
 
-        URIBuilder uriBuilder = null;
+        URI uri = null;
         try {
-            uriBuilder = new URIBuilder(input);
-        } catch (URISyntaxException e) {
+            uri = new URL(input).toURI();
+        } catch (MalformedURLException | URISyntaxException e) {
             return this.displayName + " must be a valid URL (https://example.com:8154/go)";
         }
 
-        if (isBlank(uriBuilder.getScheme())) {
+        if (isBlank(uri.getScheme())) {
             return this.displayName + " must be a valid URL (https://example.com:8154/go)";
         }
 
-        if (!uriBuilder.getScheme().equalsIgnoreCase("https")) {
+        if (!uri.getScheme().equalsIgnoreCase("https")) {
             return this.displayName + " must be a valid HTTPs URL (https://example.com:8154/go)";
         }
 
-        if (uriBuilder.getHost().equalsIgnoreCase("localhost") || uriBuilder.getHost().equalsIgnoreCase("127.0.0.1")) {
+        if (uri.getHost().equalsIgnoreCase("localhost") || uri.getHost().equalsIgnoreCase("127.0.0.1")) {
             return this.displayName + " must not be localhost, since this gets resolved on the agents";
         }
 
-        if (!(uriBuilder.getPath().endsWith("/go") || uriBuilder.getPath().endsWith("/go/"))) {
+        if (!(uri.getPath().endsWith("/go") || uri.getPath().endsWith("/go/"))) {
             return this.displayName + " must be a valid URL ending with '/go' (https://example.com:8154/go)";
         }
+
         return null;
     }
 

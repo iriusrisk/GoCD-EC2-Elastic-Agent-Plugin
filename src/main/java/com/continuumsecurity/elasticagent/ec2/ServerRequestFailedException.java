@@ -50,4 +50,8 @@ public class ServerRequestFailedException extends Exception {
     public static ServerRequestFailedException serverInfo(GoApiResponse response) {
         return new ServerRequestFailedException(response, "get server info");
     }
+
+    public static ServerRequestFailedException appendToConsoleLog(GoApiResponse response) {
+        return new ServerRequestFailedException(response, "append to console log");
+    }
 }

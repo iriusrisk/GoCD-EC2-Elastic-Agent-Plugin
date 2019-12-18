@@ -18,10 +18,9 @@
 
 package com.continuumsecurity.elasticagent.ec2.executors;
 
+import com.continuumsecurity.elasticagent.ec2.RequestExecutor;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
-import com.continuumsecurity.elasticagent.ec2.RequestExecutor;
 import com.thoughtworks.go.plugin.api.response.DefaultGoPluginApiResponse;
 import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
 
@@ -35,7 +34,8 @@ public class GetCapabilitiesExecutor implements RequestExecutor {
     private static final Map<String, Boolean> CAPABILITIES_RESPONSE = new LinkedHashMap<>();
 
     static {
-        CAPABILITIES_RESPONSE.put("supports_status_report", true);
+        CAPABILITIES_RESPONSE.put("supports_plugin_status_report", true);
+        CAPABILITIES_RESPONSE.put("supports_cluster_status_report", true);
         CAPABILITIES_RESPONSE.put("supports_agent_status_report", true);
     }
 

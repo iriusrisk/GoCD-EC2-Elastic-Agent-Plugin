@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 ThoughtWorks, Inc.
+ * Copyright 2019 ThoughtWorks, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,37 +18,36 @@
 
 package com.continuumsecurity.elasticagent.ec2.executors;
 
-import com.google.gson.JsonObject;
-
-import com.continuumsecurity.elasticagent.ec2.PluginRequest;
+import com.continuumsecurity.elasticagent.ec2.AgentInstances;
 import com.continuumsecurity.elasticagent.ec2.RequestExecutor;
 import com.continuumsecurity.elasticagent.ec2.models.StatusReport;
+import com.continuumsecurity.elasticagent.ec2.requests.ClusterStatusReportRequest;
 import com.continuumsecurity.elasticagent.ec2.views.ViewBuilder;
+import com.google.gson.JsonObject;
 import com.thoughtworks.go.plugin.api.response.DefaultGoPluginApiResponse;
 import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
 
-import freemarker.template.Template;
+import static com.continuumsecurity.elasticagent.ec2.Ec2Plugin.LOG;
 
-import com.continuumsecurity.elasticagent.ec2.AgentInstance;
+public class ClusterStatusReportExecutor implements RequestExecutor {
 
-public class StatusReportExecutor implements RequestExecutor {
-
-    private final PluginRequest pluginRequest;
-    private final AgentInstance agentInstances;
+    private final ClusterStatusReportRequest clusterStatusReportRequest;
+    private final AgentInstances agentInstances;
     private final ViewBuilder viewBuilder;
 
-    public StatusReportExecutor(PluginRequest pluginRequest, AgentInstance agentInstances, ViewBuilder viewBuilder) {
-        this.pluginRequest = pluginRequest;
+    public ClusterStatusReportExecutor(ClusterStatusReportRequest clusterStatusReportRequest, AgentInstances agentInstances, ViewBuilder viewBuilder) {
+        this.clusterStatusReportRequest = clusterStatusReportRequest;
         this.agentInstances = agentInstances;
         this.viewBuilder = viewBuilder;
     }
 
     @Override
     public GoPluginApiResponse execute() throws Exception {
-        StatusReport statusReport = agentInstances.getStatusReport(pluginRequest.getPluginSettings());
+        LOG.info("[status-report] Generating status report");
 
-        final Template template = viewBuilder.getTemplate("status-report.template.ftlh");
-        final String statusReportView = viewBuilder.build(template, statusReport);
+        StatusReport statusReport = agentInstances.getStatusReport(clusterStatusReportRequest.getClusterProfile());
+
+        final String statusReportView = viewBuilder.build(viewBuilder.getTemplate("status-report.template.ftlh"), statusReport);
 
         JsonObject responseJSON = new JsonObject();
         responseJSON.addProperty("view", statusReportView);

@@ -18,21 +18,12 @@
 
 package com.continuumsecurity.elasticagent.ec2;
 
-import com.continuumsecurity.elasticagent.ec2.executors.GetCapabilitiesExecutor;
-import com.continuumsecurity.elasticagent.ec2.executors.GetPluginConfigurationExecutor;
-import com.continuumsecurity.elasticagent.ec2.executors.GetPluginSettingsIconExecutor;
-import com.continuumsecurity.elasticagent.ec2.executors.GetProfileMetadataExecutor;
-import com.continuumsecurity.elasticagent.ec2.executors.GetProfileViewExecutor;
-import com.continuumsecurity.elasticagent.ec2.executors.GetViewRequestExecutor;
-import com.continuumsecurity.elasticagent.ec2.executors.ServerPingRequestExecutor;
-import com.continuumsecurity.elasticagent.ec2.executors.StatusReportExecutor;
-import com.continuumsecurity.elasticagent.ec2.requests.AgentStatusReportRequest;
-import com.continuumsecurity.elasticagent.ec2.requests.CreateAgentRequest;
-import com.continuumsecurity.elasticagent.ec2.requests.JobCompletionRequest;
-import com.continuumsecurity.elasticagent.ec2.requests.ProfileValidateRequest;
-import com.continuumsecurity.elasticagent.ec2.requests.ShouldAssignWorkRequest;
-import com.continuumsecurity.elasticagent.ec2.requests.ValidatePluginSettings;
+import com.continuumsecurity.elasticagent.ec2.executors.*;
+import com.continuumsecurity.elasticagent.ec2.requests.*;
 import com.continuumsecurity.elasticagent.ec2.views.ViewBuilder;
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.thoughtworks.go.plugin.api.GoApplicationAccessor;
 import com.thoughtworks.go.plugin.api.GoPlugin;
 import com.thoughtworks.go.plugin.api.GoPluginIdentifier;
@@ -42,58 +33,105 @@ import com.thoughtworks.go.plugin.api.logging.Logger;
 import com.thoughtworks.go.plugin.api.request.GoPluginApiRequest;
 import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 @Extension
 public class Ec2Plugin implements GoPlugin {
 
     public static final Logger LOG = Logger.getLoggerFor(Ec2Plugin.class);
+    public static final Gson GSON = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
 
     private PluginRequest pluginRequest;
-    private AgentInstance agentInstances;
+    private Map<String, Ec2AgentInstances> clusterSpecificAgentInstances;
 
     @Override
     public void initializeGoApplicationAccessor(GoApplicationAccessor accessor) {
         pluginRequest = new PluginRequest(accessor);
-        agentInstances = new Ec2AgentInstance();
+        clusterSpecificAgentInstances = new HashMap<>();
     }
 
     @Override
-    public GoPluginApiResponse handle(GoPluginApiRequest request) throws UnhandledRequestTypeException {
+    public GoPluginIdentifier pluginIdentifier() {
+        return Constants.PLUGIN_IDENTIFIER;
+    }
+
+    @Override
+    public GoPluginApiResponse handle(GoPluginApiRequest request) {
+        ClusterProfileProperties clusterProfileProperties;
         try {
             switch (Request.fromString(request.requestName())) {
+                case REQUEST_GET_ICON:
+                    return new GetPluginIconExecutor().execute();
+
                 case REQUEST_SHOULD_ASSIGN_WORK:
-                    refreshInstances();
-                    return ShouldAssignWorkRequest.fromJSON(request.requestBody()).executor(agentInstances).execute();
+                    ShouldAssignWorkRequest shouldAssignWorkRequest = ShouldAssignWorkRequest.fromJSON(request.requestBody());
+                    clusterProfileProperties = shouldAssignWorkRequest.getClusterProfileProperties();
+                    refreshInstancesForCluster(clusterProfileProperties);
+                    return shouldAssignWorkRequest.executor(getAgentInstancesFor(clusterProfileProperties)).execute();
+
                 case REQUEST_CREATE_AGENT:
-                    refreshInstances();
-                    return CreateAgentRequest.fromJSON(request.requestBody()).executor(agentInstances, pluginRequest).execute();
+                    CreateAgentRequest createAgentRequest = CreateAgentRequest.fromJSON(request.requestBody());
+                    clusterProfileProperties = createAgentRequest.getClusterProfileProperties();
+                    refreshInstancesForCluster(clusterProfileProperties);
+                    return createAgentRequest.executor(getAgentInstancesFor(clusterProfileProperties), pluginRequest).execute();
+
                 case REQUEST_SERVER_PING:
-                    refreshInstances();
-                    return new ServerPingRequestExecutor(agentInstances, pluginRequest).execute();
-                case PLUGIN_SETTINGS_GET_VIEW:
-                    return new GetViewRequestExecutor().execute();
-                case REQUEST_GET_PROFILE_METADATA:
+                    ServerPingRequest serverPingRequest = ServerPingRequest.fromJSON(request.requestBody());
+                    refreshInstancesForAllClusters(serverPingRequest.allClusterProfileProperties());
+                    return serverPingRequest.executor(clusterSpecificAgentInstances, pluginRequest).execute();
+
+                case REQUEST_GET_ELASTIC_AGENT_PROFILE_METADATA:
                     return new GetProfileMetadataExecutor().execute();
-                case REQUEST_GET_PROFILE_VIEW:
+
+                case REQUEST_GET_ELASTIC_AGENT_PROFILE_VIEW:
                     return new GetProfileViewExecutor().execute();
-                case REQUEST_VALIDATE_PROFILE:
-                    return ProfileValidateRequest.fromJSON(request.requestBody()).executor().execute();
-                case PLUGIN_SETTINGS_GET_ICON:
-                    return new GetPluginSettingsIconExecutor().execute();
-                case PLUGIN_SETTINGS_GET_CONFIGURATION:
-                    return new GetPluginConfigurationExecutor().execute();
-                case PLUGIN_SETTINGS_VALIDATE_CONFIGURATION:
-                    return ValidatePluginSettings.fromJSON(request.requestBody()).executor().execute();
+
+                case REQUEST_VALIDATE_ELASTIC_AGENT_PROFILE:
+                    return ValidateProfileRequest.fromJSON(request.requestBody()).executor().execute();
+
                 case REQUEST_JOB_COMPLETION:
-                    refreshInstances();
-                    return JobCompletionRequest.fromJSON(request.requestBody()).executor(agentInstances, pluginRequest).execute();
-                case REQUEST_STATUS_REPORT:
-                    refreshInstances();
-                    return new StatusReportExecutor(pluginRequest, agentInstances, ViewBuilder.instance()).execute();
-                case REQUEST_AGENT_STATUS_REPORT:
-                    refreshInstances();
-                    return AgentStatusReportRequest.fromJSON(request.requestBody()).executor(pluginRequest, agentInstances, ViewBuilder.instance()).execute();
+                    JobCompletionRequest jobCompletionRequest = JobCompletionRequest.fromJSON(request.requestBody());
+                    clusterProfileProperties = jobCompletionRequest.getClusterProfileProperties();
+                    refreshInstancesForCluster(clusterProfileProperties);
+                    return jobCompletionRequest.executor(getAgentInstancesFor(clusterProfileProperties), pluginRequest).execute();
+
                 case REQUEST_CAPABILITIES:
                     return new GetCapabilitiesExecutor().execute();
+
+                case REQUEST_AGENT_STATUS_REPORT:
+                    AgentStatusReportRequest agentStatusReportRequest = AgentStatusReportRequest.fromJSON(request.requestBody());
+                    clusterProfileProperties = agentStatusReportRequest.getClusterProfile();
+                    refreshInstancesForCluster(clusterProfileProperties);
+                    return agentStatusReportRequest.executor(pluginRequest, clusterSpecificAgentInstances.get(clusterProfileProperties.uuid())).execute();
+
+                case REQUEST_CLUSTER_STATUS_REPORT:
+                    ClusterStatusReportRequest clusterStatusReportRequest = ClusterStatusReportRequest.fromJSON(request.requestBody());
+                    clusterProfileProperties = clusterStatusReportRequest.getClusterProfile();
+                    refreshInstancesForCluster(clusterProfileProperties);
+                    return clusterStatusReportRequest.executor(clusterSpecificAgentInstances.get(clusterProfileProperties.uuid())).execute();
+
+                case REQUEST_PLUGIN_STATUS_REPORT:
+                    PluginStatusReportRequest pluginStatusReportRequest = PluginStatusReportRequest.fromJSON(request.requestBody());
+                    refreshInstancesForAllClusters(pluginStatusReportRequest.allClusterProfileProperties());
+                    return pluginStatusReportRequest.executor(clusterSpecificAgentInstances, ViewBuilder.instance()).execute();
+
+                case REQUEST_GET_CLUSTER_PROFILE_METADATA:
+                    return new GetClusterProfileMetadataExecutor().execute();
+
+                case REQUEST_GET_CLUSTER_PROFILE_VIEW:
+                    return new GetClusterProfileViewRequestExecutor().execute();
+
+                case REQUEST_VALIDATE_CLUSTER_PROFILE_CONFIGURATION:
+                    return ClusterProfileValidateRequest.fromJSON(request.requestBody()).executor().execute();
+
+                case REQUEST_CLUSTER_PROFILE_CHANGED:
+                    return ClusterProfileChangedRequest.fromJSON(request.requestBody()).executor(clusterSpecificAgentInstances).execute();
+
+                case REQUEST_MIGRATE_CONFIGURATION:
+                    return MigrateConfigurationRequest.fromJSON(request.requestBody()).executor().execute();
+
                 default:
                     throw new UnhandledRequestTypeException(request.requestName());
             }
@@ -102,17 +140,24 @@ public class Ec2Plugin implements GoPlugin {
         }
     }
 
-    private void refreshInstances() {
-        try {
-            agentInstances.refreshAll(pluginRequest);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+    private void refreshInstancesForAllClusters(List<ClusterProfileProperties> listOfClusterProfileProperties) throws Exception {
+        for (ClusterProfileProperties clusterProfileProperties : listOfClusterProfileProperties) {
+            refreshInstancesForCluster(clusterProfileProperties);
         }
     }
 
-    @Override
-    public GoPluginIdentifier pluginIdentifier() {
-        return Constants.PLUGIN_IDENTIFIER;
+    private void refreshInstancesForCluster(ClusterProfileProperties clusterProfileProperties) throws Exception {
+        Ec2AgentInstances agentInstances = getAgentInstancesForCluster(clusterProfileProperties);
+        agentInstances.refreshAll(clusterProfileProperties);
+        clusterSpecificAgentInstances.put(clusterProfileProperties.uuid(), agentInstances);
+    }
+
+    private Ec2AgentInstances getAgentInstancesForCluster(ClusterProfileProperties clusterProfileProperties) {
+        return clusterSpecificAgentInstances.get(clusterProfileProperties.uuid());
+    }
+
+    private AgentInstances<Ec2Instance> getAgentInstancesFor(ClusterProfileProperties clusterProfileProperties) {
+        return clusterSpecificAgentInstances.get(clusterProfileProperties.uuid());
     }
 
 }

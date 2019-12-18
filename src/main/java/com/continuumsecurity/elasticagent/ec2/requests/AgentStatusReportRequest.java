@@ -18,18 +18,19 @@
 
 package com.continuumsecurity.elasticagent.ec2.requests;
 
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.annotations.Expose;
-
-import java.util.Objects;
-
-import com.continuumsecurity.elasticagent.ec2.AgentInstance;
+import com.continuumsecurity.elasticagent.ec2.ClusterProfileProperties;
+import com.continuumsecurity.elasticagent.ec2.Ec2AgentInstances;
 import com.continuumsecurity.elasticagent.ec2.PluginRequest;
 import com.continuumsecurity.elasticagent.ec2.executors.AgentStatusReportExecutor;
 import com.continuumsecurity.elasticagent.ec2.models.JobIdentifier;
 import com.continuumsecurity.elasticagent.ec2.views.ViewBuilder;
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
+
+import java.util.Objects;
 
 public class AgentStatusReportRequest {
     private static final Gson GSON = new GsonBuilder().excludeFieldsWithoutExposeAnnotation()
@@ -42,12 +43,18 @@ public class AgentStatusReportRequest {
     @Expose
     private JobIdentifier jobIdentifier;
 
+    @Expose
+    @SerializedName("cluster_profile_properties")
+    private ClusterProfileProperties clusterProfileProperties;
+
     public AgentStatusReportRequest() {
     }
 
-    public AgentStatusReportRequest(String elasticAgentId, JobIdentifier jobIdentifier) {
+    public AgentStatusReportRequest(String elasticAgentId, JobIdentifier jobIdentifier, ClusterProfileProperties clusterProfileProperties) {
         this.elasticAgentId = elasticAgentId;
         this.jobIdentifier = jobIdentifier;
+        this.clusterProfileProperties = clusterProfileProperties;
+//        this.clusterProfileProperties = ClusterProfileProperties.fromConfiguration(clusterProfileProperties);
     }
 
     public static AgentStatusReportRequest fromJSON(String json) {
@@ -62,8 +69,12 @@ public class AgentStatusReportRequest {
         return jobIdentifier;
     }
 
-    public AgentStatusReportExecutor executor(PluginRequest pluginRequest, AgentInstance agentInstances, ViewBuilder viewBuilder) {
-        return new AgentStatusReportExecutor(this, pluginRequest, agentInstances, viewBuilder);
+    public AgentStatusReportExecutor executor(PluginRequest pluginRequest, Ec2AgentInstances ec2AgentInstances) {
+        return new AgentStatusReportExecutor(this, pluginRequest, ec2AgentInstances, ViewBuilder.instance());
+    }
+
+    public ClusterProfileProperties getClusterProfile() {
+        return clusterProfileProperties;
     }
 
     @Override
@@ -72,19 +83,22 @@ public class AgentStatusReportRequest {
         if (o == null || getClass() != o.getClass()) return false;
         AgentStatusReportRequest that = (AgentStatusReportRequest) o;
         return Objects.equals(elasticAgentId, that.elasticAgentId) &&
-                Objects.equals(jobIdentifier, that.jobIdentifier);
+                Objects.equals(jobIdentifier, that.jobIdentifier) &&
+                Objects.equals(clusterProfileProperties, that.clusterProfileProperties);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(elasticAgentId, jobIdentifier);
+        return Objects.hash(elasticAgentId, jobIdentifier, clusterProfileProperties);
     }
+
 
     @Override
     public String toString() {
         return "AgentStatusReportRequest{" +
                 "elasticAgentId='" + elasticAgentId + '\'' +
                 ", jobIdentifier=" + jobIdentifier +
+                ", clusterProfileProperties=" + clusterProfileProperties +
                 '}';
     }
 }

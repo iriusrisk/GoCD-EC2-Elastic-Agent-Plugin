@@ -18,10 +18,9 @@
 
 package com.continuumsecurity.elasticagent.ec2.requests;
 
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
+import com.continuumsecurity.elasticagent.ec2.*;
+import com.continuumsecurity.elasticagent.ec2.executors.CreateAgentRequestExecutor;
+import com.continuumsecurity.elasticagent.ec2.models.JobIdentifier;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
@@ -29,41 +28,40 @@ import java.io.StringWriter;
 import java.util.Map;
 import java.util.Properties;
 
-import com.continuumsecurity.elasticagent.ec2.AgentInstance;
-import com.continuumsecurity.elasticagent.ec2.Constants;
-import com.continuumsecurity.elasticagent.ec2.PluginRequest;
-import com.continuumsecurity.elasticagent.ec2.RequestExecutor;
-import com.continuumsecurity.elasticagent.ec2.executors.CreateAgentRequestExecutor;
-import com.continuumsecurity.elasticagent.ec2.models.JobIdentifier;
+import static com.continuumsecurity.elasticagent.ec2.Ec2Plugin.GSON;
 
 public class CreateAgentRequest {
-    private static final Gson GSON = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
-    private String autoRegisterKey;
-    private Map<String, String> properties;
-    private String environment;
-    private JobIdentifier jobIdentifier;
 
+    private String autoRegisterKey;
+    private JobIdentifier jobIdentifier;
+    private Map<String, String> elasticAgentProfileProperties;
+    private ClusterProfileProperties clusterProfileProperties;
 
     public CreateAgentRequest() {
     }
 
-    public CreateAgentRequest(String autoRegisterKey, Map<String, String> properties, String environment, JobIdentifier jobIdentifier) {
+    public CreateAgentRequest(String autoRegisterKey,
+                              Map<String, String> elasticAgentProfileProperties,
+                              JobIdentifier jobIdentifier,
+                              Map<String, String> clusterProfileProperties) {
         this.autoRegisterKey = autoRegisterKey;
-        this.properties = properties;
-        this.environment = environment;
+        this.elasticAgentProfileProperties = elasticAgentProfileProperties;
         this.jobIdentifier = jobIdentifier;
+        this.clusterProfileProperties = ClusterProfileProperties.fromConfiguration(clusterProfileProperties);
+    }
+
+    public CreateAgentRequest(String autoRegisterKey,
+                              Map<String, String> elasticAgentProfileProperties,
+                              JobIdentifier jobIdentifier,
+                              ClusterProfileProperties clusterProfileProperties) {
+        this.autoRegisterKey = autoRegisterKey;
+        this.elasticAgentProfileProperties = elasticAgentProfileProperties;
+        this.jobIdentifier = jobIdentifier;
+        this.clusterProfileProperties = clusterProfileProperties;
     }
 
     public String autoRegisterKey() {
         return autoRegisterKey;
-    }
-
-    public Map<String, String> properties() {
-        return properties;
-    }
-
-    public String environment() {
-        return environment;
     }
 
     public JobIdentifier jobIdentifier() {
@@ -74,7 +72,7 @@ public class CreateAgentRequest {
         return GSON.fromJson(json, CreateAgentRequest.class);
     }
 
-    public RequestExecutor executor(AgentInstance agentInstances, PluginRequest pluginRequest) {
+    public RequestExecutor executor(AgentInstances agentInstances, PluginRequest pluginRequest) {
         return new CreateAgentRequestExecutor(this, agentInstances, pluginRequest);
     }
 
@@ -85,17 +83,13 @@ public class CreateAgentRequest {
             properties.put("agent.auto.register.key", autoRegisterKey);
         }
 
-        if (StringUtils.isNotBlank(environment)) {
-            properties.put("agent.auto.register.environments", environment);
-        }
-
         properties.put("agent.auto.register.elasticAgent.agentId", elasticAgentId);
         properties.put("agent.auto.register.elasticAgent.pluginId", Constants.PLUGIN_ID);
 
         return properties;
     }
 
-    public String autoregisterPropertiesAsString(String elasticAgentId) {
+    public String autoregisterPropertiesAsEnvironmentVars(String elasticAgentId) {
         Properties properties = autoregisterProperties(elasticAgentId);
 
         StringWriter writer = new StringWriter();
@@ -109,12 +103,12 @@ public class CreateAgentRequest {
         return writer.toString();
     }
 
-    public String propertiesToJson() {
-        return GSON.toJson(this.properties);
+    public Map<String, String> properties() {
+        return elasticAgentProfileProperties;
     }
 
-    public static Map<String, String> propertiesFromJson(String json) {
-        return GSON.fromJson(json, Map.class);
+    public ClusterProfileProperties getClusterProfileProperties() {
+        return clusterProfileProperties;
     }
 
 }

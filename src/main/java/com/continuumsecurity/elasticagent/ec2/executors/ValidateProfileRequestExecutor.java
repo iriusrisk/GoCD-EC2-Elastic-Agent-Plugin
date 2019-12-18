@@ -18,33 +18,47 @@
 
 package com.continuumsecurity.elasticagent.ec2.executors;
 
-import com.google.gson.Gson;
-
 import com.continuumsecurity.elasticagent.ec2.RequestExecutor;
-import com.continuumsecurity.elasticagent.ec2.requests.ValidatePluginSettings;
+import com.continuumsecurity.elasticagent.ec2.requests.ValidateProfileRequest;
+import com.google.gson.Gson;
 import com.thoughtworks.go.plugin.api.response.DefaultGoPluginApiResponse;
 import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
 
-import java.util.ArrayList;
-import java.util.Map;
+import java.util.*;
 
-public class ValidateConfigurationExecutor implements RequestExecutor {
+public class ValidateProfileRequestExecutor implements RequestExecutor {
+    private final ValidateProfileRequest request;
     private static final Gson GSON = new Gson();
 
-    private final ValidatePluginSettings settings;
-
-    public ValidateConfigurationExecutor(ValidatePluginSettings settings) {
-        this.settings = settings;
+    public ValidateProfileRequestExecutor(ValidateProfileRequest request) {
+        this.request = request;
     }
 
-    public GoPluginApiResponse execute() {
+    @Override
+    public GoPluginApiResponse execute() throws Exception {
         ArrayList<Map<String, String>> result = new ArrayList<>();
 
-        for (Map.Entry<String, Field> entry : GetPluginConfigurationExecutor.FIELDS.entrySet()) {
-            Field field = entry.getValue();
-            Map<String, String> validationError = field.validate(settings.get(entry.getKey()));
+        List<String> knownFields = new ArrayList<>();
+
+        for (Metadata field : GetProfileMetadataExecutor.FIELDS) {
+            knownFields.add(field.getKey());
+
+            Map<String, String> validationError = field.validate(request.getProperties().get(field.getKey()));
 
             if (!validationError.isEmpty()) {
+                result.add(validationError);
+            }
+        }
+
+
+        Set<String> set = new HashSet<>(request.getProperties().keySet());
+        set.removeAll(knownFields);
+
+        if (!set.isEmpty()) {
+            for (String key : set) {
+                LinkedHashMap<String, String> validationError = new LinkedHashMap<>();
+                validationError.put("key", key);
+                validationError.put("message", "Is an unknown property");
                 result.add(validationError);
             }
         }

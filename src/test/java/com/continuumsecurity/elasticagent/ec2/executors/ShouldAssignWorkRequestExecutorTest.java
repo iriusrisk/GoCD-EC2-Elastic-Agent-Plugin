@@ -18,61 +18,70 @@
 
 package com.continuumsecurity.elasticagent.ec2.executors;
 
-import com.continuumsecurity.elasticagent.ec2.Agent;
-import com.continuumsecurity.elasticagent.ec2.BaseTest;
-import com.continuumsecurity.elasticagent.ec2.Ec2AgentInstance;
-import com.continuumsecurity.elasticagent.ec2.Ec2Instance;
+import com.continuumsecurity.elasticagent.ec2.*;
 import com.continuumsecurity.elasticagent.ec2.models.JobIdentifier;
+import com.continuumsecurity.elasticagent.ec2.models.JobIdentifierMother;
 import com.continuumsecurity.elasticagent.ec2.requests.CreateAgentRequest;
 import com.continuumsecurity.elasticagent.ec2.requests.ShouldAssignWorkRequest;
 import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 import java.util.UUID;
 
-import com.continuumsecurity.elasticagent.ec2.AgentInstance;
-import com.continuumsecurity.elasticagent.ec2.models.JobIdentifierMother;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.mock;
 
 public class ShouldAssignWorkRequestExecutorTest extends BaseTest {
 
-    private AgentInstance<Ec2Instance> agentInstances;
+    private Ec2AgentInstances agentInstances;
     private Ec2Instance instance;
-    private final String environment = "production";
     private Map<String, String> properties = createProperties();
     private final JobIdentifier jobIdentifier = JobIdentifierMother.get();
 
     @BeforeEach
-    public void setUp() throws Exception {
-        agentInstances = new Ec2AgentInstance();
-        instance = agentInstances.create(new CreateAgentRequest(UUID.randomUUID().toString(), properties, environment, jobIdentifier), createSettings());
+    public void setUp() {
+        agentInstances = new Ec2AgentInstances();
     }
 
-    @Test
-    public void shouldAssignWorkToContainerWithSameJobIdentifier() {
-        ShouldAssignWorkRequest request = new ShouldAssignWorkRequest(new Agent(instance.id(), null, null, null), environment, jobIdentifier, null);
-        GoPluginApiResponse response = new ShouldAssignWorkRequestExecutor(request, agentInstances).execute();
-        assertThat(response.responseCode(), is(200));
-        assertThat(response.responseBody(), is("true"));
+    private void createTestInstance() {
+        ClusterProfileProperties clusterProfiles = createClusterProfiles();
+
+        instance = agentInstances.create(
+                new CreateAgentRequest(UUID.randomUUID().toString(), properties, jobIdentifier, clusterProfiles),
+                mock(PluginRequest.class),
+                mock(ConsoleLogAppender.class));
+
+        instances.add(instance.id());
     }
 
-    @Test
-    public void shouldNotAssignWorkToContainerWithDifferentJobIdentifier() {
-        JobIdentifier otherJobId = new JobIdentifier("up42", 2L, "foo", "stage", "1", "job", 2L);
-        ShouldAssignWorkRequest request = new ShouldAssignWorkRequest(new Agent(instance.id(), null, null, null), environment, otherJobId, null);
-        GoPluginApiResponse response = new ShouldAssignWorkRequestExecutor(request, agentInstances).execute();
-        assertThat(response.responseCode(), is(200));
-        assertThat(response.responseBody(), is("false"));
-    }
+    // enable on your own risk, may incur in charges in AWS
+//    @Test
+//    public void shouldAssignWorkToContainerWithSameJobIdentifier() {
+//        createTestInstance();
+//
+//        ShouldAssignWorkRequest request = new ShouldAssignWorkRequest(new Agent(instance.id(), null, null, null), jobIdentifier, properties, null);
+//        GoPluginApiResponse response = new ShouldAssignWorkRequestExecutor(request, agentInstances).execute();
+//        assertThat(response.responseCode(), is(200));
+//        assertThat(response.responseBody(), is("true"));
+//    }
+//
+//    @Test
+//    public void shouldNotAssignWorkToContainerWithDifferentJobIdentifier() {
+//        createTestInstance();
+//
+//        JobIdentifier otherJobId = new JobIdentifier("up42", 2L, "foo", "stage", "1", "job", 2L);
+//        ShouldAssignWorkRequest request = new ShouldAssignWorkRequest(new Agent(instance.id(), null, null, null), otherJobId, properties, null);
+//        GoPluginApiResponse response = new ShouldAssignWorkRequestExecutor(request, agentInstances).execute();
+//        assertThat(response.responseCode(), is(200));
+//        assertThat(response.responseBody(), is("false"));
+//    }
 
     @Test
     public void shouldNotAssignWorkIfInstanceIsNotFound() {
-        ShouldAssignWorkRequest request = new ShouldAssignWorkRequest(new Agent("unknown-name", null, null, null), environment, jobIdentifier, null);
+        ShouldAssignWorkRequest request = new ShouldAssignWorkRequest(new Agent("unknown-name", null, null, null), jobIdentifier, properties, null);
         GoPluginApiResponse response = new ShouldAssignWorkRequestExecutor(request, agentInstances).execute();
         assertThat(response.responseCode(), is(200));
         assertThat(response.responseBody(), is("false"));

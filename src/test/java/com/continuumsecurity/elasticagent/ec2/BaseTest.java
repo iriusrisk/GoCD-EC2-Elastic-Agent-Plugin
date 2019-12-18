@@ -18,7 +18,6 @@
 
 package com.continuumsecurity.elasticagent.ec2;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -27,8 +26,8 @@ public abstract class BaseTest {
 
     protected static HashSet<String> instances = new HashSet<>();
 
-    protected PluginSettings createSettings() throws IOException {
-        PluginSettings settings = new PluginSettings();
+    protected ClusterProfileProperties createClusterProfiles() {
+        ClusterProfileProperties settings = new ClusterProfileProperties();
         settings.setGoServerUrl(Properties.SERVER_URL);
         settings.setAutoRegisterTimeout(Properties.AUTO_REGISTER_TIMEOUT);
         settings.setMaxElasticAgents(Properties.MAX_ELASTIC_AGENTS);

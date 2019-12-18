@@ -18,12 +18,13 @@
 
 package com.continuumsecurity.elasticagent.ec2.requests;
 
-import com.google.gson.Gson;
-
-import java.util.Map;
-
 import com.continuumsecurity.elasticagent.ec2.RequestExecutor;
 import com.continuumsecurity.elasticagent.ec2.executors.ProfileValidateRequestExecutor;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+import java.lang.reflect.Type;
+import java.util.Map;
 
 public class ProfileValidateRequest {
 
@@ -40,7 +41,10 @@ public class ProfileValidateRequest {
     }
 
     public static ProfileValidateRequest fromJSON(String json) {
-        return new ProfileValidateRequest(GSON.fromJson(json, Map.class));
+        final Type type = new TypeToken<Map<String, String>>() {
+        }.getType();
+        final Map<String, String> properties = GSON.fromJson(json, type);
+        return new ProfileValidateRequest(properties);
     }
 
     public RequestExecutor executor() {

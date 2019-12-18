@@ -19,7 +19,6 @@
 package com.continuumsecurity.elasticagent.ec2.executors;
 
 import com.continuumsecurity.elasticagent.ec2.requests.ProfileValidateRequest;
-
 import org.junit.jupiter.api.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;

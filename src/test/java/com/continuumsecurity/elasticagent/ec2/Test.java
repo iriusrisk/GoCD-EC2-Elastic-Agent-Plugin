@@ -12,6 +12,8 @@ import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static org.mockito.Mockito.mock;
+
 public class Test {
 
     public static void main(String[] args) {
@@ -38,22 +40,22 @@ public class Test {
                 68L
         );
 
+        ClusterProfileProperties settings = new ClusterProfileProperties();
+        settings.setGoServerUrl(Properties.SERVER_URL);
+        settings.setAutoRegisterTimeout(Properties.AUTO_REGISTER_TIMEOUT);
+        settings.setMaxElasticAgents(Properties.MAX_ELASTIC_AGENTS);
+        settings.setAwsAccessKeyId(Properties.ACCESS_KEY_ID);
+        settings.setAwsSecretAccessKey(Properties.SECRET_ACCESS_KEY);
+        settings.setAwsRegion(Properties.REGION);
+
         CreateAgentRequest createAgentRequest = new CreateAgentRequest(
                 Properties.AUTO_REGISTER_KEY,
                 properties,
-                "aws",
-                jobIdentifier
+                jobIdentifier,
+                settings
         );
 
-        PluginSettings pluginSettings = new PluginSettings();
-        pluginSettings.setGoServerUrl(Properties.SERVER_URL);
-        pluginSettings.setAutoRegisterTimeout(Properties.AUTO_REGISTER_TIMEOUT);
-        pluginSettings.setMaxElasticAgents(Properties.MAX_ELASTIC_AGENTS);
-        pluginSettings.setAwsAccessKeyId(Properties.ACCESS_KEY_ID);
-        pluginSettings.setAwsSecretAccessKey(Properties.SECRET_ACCESS_KEY);
-        pluginSettings.setAwsRegion(Properties.REGION);
-
-        Ec2Instance ec2Instance = Ec2Instance.create(createAgentRequest,pluginSettings);
+        Ec2Instance ec2Instance = Ec2Instance.create(createAgentRequest, settings, mock(ConsoleLogAppender.class));
         //*System.out.println(ec2Instance.toString());
 
         ConcurrentHashMap<String, Ec2Instance> instances = new ConcurrentHashMap<>();
@@ -112,7 +114,7 @@ public class Test {
         }
         System.out.println(count+" instances found");
 
-        ec2Instance.terminate(pluginSettings);
+        ec2Instance.terminate(settings);
 
     }
 

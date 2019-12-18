@@ -19,9 +19,7 @@
 package com.continuumsecurity.elasticagent.ec2.executors;
 
 import com.google.gson.Gson;
-
 import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
-
 import org.junit.jupiter.api.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 

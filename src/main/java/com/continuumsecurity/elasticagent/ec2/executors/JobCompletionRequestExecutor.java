@@ -18,21 +18,22 @@
 
 package com.continuumsecurity.elasticagent.ec2.executors;
 
+import com.continuumsecurity.elasticagent.ec2.*;
 import com.continuumsecurity.elasticagent.ec2.requests.JobCompletionRequest;
 import com.thoughtworks.go.plugin.api.response.DefaultGoPluginApiResponse;
 import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
 
-import com.continuumsecurity.elasticagent.ec2.AgentInstance;
-import com.continuumsecurity.elasticagent.ec2.Ec2Instance;
-import com.continuumsecurity.elasticagent.ec2.PluginRequest;
-import com.continuumsecurity.elasticagent.ec2.RequestExecutor;
+import java.util.Arrays;
+import java.util.List;
+
+import static com.continuumsecurity.elasticagent.ec2.Ec2Plugin.LOG;
 
 public class JobCompletionRequestExecutor implements RequestExecutor {
     private final JobCompletionRequest jobCompletionRequest;
-    private final AgentInstance<Ec2Instance> agentInstances;
+    private final AgentInstances<Ec2Instance> agentInstances;
     private final PluginRequest pluginRequest;
 
-    public JobCompletionRequestExecutor(JobCompletionRequest jobCompletionRequest, AgentInstance<Ec2Instance> agentInstances, PluginRequest pluginRequest) {
+    public JobCompletionRequestExecutor(JobCompletionRequest jobCompletionRequest, AgentInstances<Ec2Instance> agentInstances, PluginRequest pluginRequest) {
         this.jobCompletionRequest = jobCompletionRequest;
         this.agentInstances = agentInstances;
         this.pluginRequest = pluginRequest;
@@ -40,7 +41,14 @@ public class JobCompletionRequestExecutor implements RequestExecutor {
 
     @Override
     public GoPluginApiResponse execute() throws Exception {
-        agentInstances.terminate(jobCompletionRequest.getElasticAgentId(), pluginRequest.getPluginSettings());
-        return new DefaultGoPluginApiResponse(200);
+        ClusterProfileProperties clusterProfileProperties = jobCompletionRequest.getClusterProfileProperties();
+        String elasticAgentId = jobCompletionRequest.getElasticAgentId();
+        Agent agent = new Agent(elasticAgentId);
+        LOG.info("[Job Completion] Terminating elastic agent with id {} on job completion {} in cluster {}.", agent.elasticAgentId(), jobCompletionRequest.jobIdentifier(), clusterProfileProperties);
+        List<Agent> agents = Arrays.asList(agent);
+        pluginRequest.disableAgents(agents);
+        agentInstances.terminate(agent.elasticAgentId(), clusterProfileProperties);
+        pluginRequest.deleteAgents(agents);
+        return DefaultGoPluginApiResponse.success("");
     }
 }
