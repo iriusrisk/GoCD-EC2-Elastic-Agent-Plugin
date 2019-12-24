@@ -69,12 +69,14 @@ public class Ec2Instance {
         Ec2Client ec2 = createEc2Client(settings.getAwsAccessKeyId(), settings.getAwsSecretAccessKey(), settings.getAwsRegion());
 
         String userdata = "#!/bin/bash\n" +
-                "echo \"GO_SERVER_URL=" + settings.getGoServerUrl() + "\" > /etc/default/go-agent\n" +
-                "chown -R go:go /etc/default/go-agent\n" +
-                "echo \"agent.auto.register.key=" + request.autoRegisterKey() + "\" > /usr/share/go-agent/config/autoregister.properties\n" +
-                "echo \"agent.auto.register.hostname=EA_$(ec2-metadata --instance-id | cut -d \" \" -f 2)\" >> /usr/share/go-agent/config/autoregister.properties\n" +
-                "echo \"agent.auto.register.elasticAgent.agentId=$(ec2-metadata --instance-id | cut -d \" \" -f 2)\" >> /usr/share/go-agent/config/autoregister.properties\n" +
-                "echo \"agent.auto.register.elasticAgent.pluginId=" + Constants.PLUGIN_ID + "\" >> /usr/share/go-agent/config/autoregister.properties\n" +
+                "sed -i \"s,https://localhost:8154/go," + settings.getGoServerUrl() + ",g\" /usr/share/go-agent/wrapper-config/wrapper-properties.conf\n" +
+                "mkdir -p /var/lib/go-agent/config\n" +
+                "echo \"agent.auto.register.key=" + request.autoRegisterKey() + "\" > /var/lib/go-agent/config/autoregister.properties\n" +
+                "echo \"agent.auto.register.hostname=EA_$(ec2-metadata --instance-id | cut -d \" \" -f 2)\" >> /var/lib/go-agent/config/autoregister.properties\n" +
+                "echo \"agent.auto.register.elasticAgent.agentId=$(ec2-metadata --instance-id | cut -d \" \" -f 2)\" >> /var/lib/go-agent/config/autoregister.properties\n" +
+                "echo \"agent.auto.register.elasticAgent.pluginId=" + Constants.PLUGIN_ID + "\" >> /var/lib/go-agent/config/autoregister.properties\n" +
+                "chown -R go:go /var/log/go-agent/\n" +
+                "chown -R go:go /var/lib/go-agent/\n" +
                 "chown -R go:go /usr/share/go-agent/\n" +
                 "systemctl start go-agent.service\n";
 
