@@ -20,7 +20,6 @@ package com.continuumsecurity.elasticagent.ec2;
 
 import com.continuumsecurity.elasticagent.ec2.executors.*;
 import com.continuumsecurity.elasticagent.ec2.requests.*;
-import com.continuumsecurity.elasticagent.ec2.views.ViewBuilder;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -112,10 +111,10 @@ public class Ec2Plugin implements GoPlugin {
                     refreshInstancesForCluster(clusterProfileProperties);
                     return clusterStatusReportRequest.executor(clusterSpecificAgentInstances.get(clusterProfileProperties.uuid())).execute();
 
-                case REQUEST_PLUGIN_STATUS_REPORT:
-                    PluginStatusReportRequest pluginStatusReportRequest = PluginStatusReportRequest.fromJSON(request.requestBody());
-                    refreshInstancesForAllClusters(pluginStatusReportRequest.allClusterProfileProperties());
-                    return pluginStatusReportRequest.executor(clusterSpecificAgentInstances, ViewBuilder.instance()).execute();
+//                case REQUEST_PLUGIN_STATUS_REPORT:
+//                    PluginStatusReportRequest pluginStatusReportRequest = PluginStatusReportRequest.fromJSON(request.requestBody());
+//                    refreshInstancesForAllClusters(pluginStatusReportRequest.allClusterProfileProperties());
+//                    return pluginStatusReportRequest.executor(clusterSpecificAgentInstances, ViewBuilder.instance()).execute();
 
                 case REQUEST_GET_CLUSTER_PROFILE_METADATA:
                     return new GetClusterProfileMetadataExecutor().execute();

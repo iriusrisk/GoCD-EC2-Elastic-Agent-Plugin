@@ -34,7 +34,7 @@ public class GetCapabilitiesExecutorTest {
 
         assertThat(response.responseCode(), is(200));
         JSONObject expected = new JSONObject()
-                .put("supports_plugin_status_report", true)
+                .put("supports_plugin_status_report", false)
                 .put("supports_cluster_status_report", true)
                 .put("supports_agent_status_report", true);
         JSONAssert.assertEquals(expected, new JSONObject(response.responseBody()), true);
