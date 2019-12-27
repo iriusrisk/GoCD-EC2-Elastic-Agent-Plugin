@@ -3,7 +3,7 @@
 		margin-top: 0;
 	}
 
-	[data-plugin-style-id="ec2-elastic-plugin"] .docker-elastic-agent {
+	[data-plugin-style-id="ec2-elastic-plugin"] .ec2-elastic-agent {
         padding: 70px 20px 0 20px;
     }
 
@@ -227,7 +227,7 @@
         </ul>
     </div>
 
-    <div class="content_wrapper_inner docker-elastic-agent">
+    <div class="content_wrapper_inner ec2-elastic-agent">
         <div class="row">
             <div class="sub_tabs_container">
                 <ul class="tabs" ng-init="currenttab=currentab || 'general'">

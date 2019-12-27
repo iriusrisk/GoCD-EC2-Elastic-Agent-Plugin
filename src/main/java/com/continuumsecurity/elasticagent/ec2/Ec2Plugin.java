@@ -68,13 +68,13 @@ public class Ec2Plugin implements GoPlugin {
                     ShouldAssignWorkRequest shouldAssignWorkRequest = ShouldAssignWorkRequest.fromJSON(request.requestBody());
                     clusterProfileProperties = shouldAssignWorkRequest.getClusterProfileProperties();
                     refreshInstancesForCluster(clusterProfileProperties);
-                    return shouldAssignWorkRequest.executor(getAgentInstancesFor(clusterProfileProperties)).execute();
+                    return shouldAssignWorkRequest.executor(getAgentInstancesForCluster(clusterProfileProperties)).execute();
 
                 case REQUEST_CREATE_AGENT:
                     CreateAgentRequest createAgentRequest = CreateAgentRequest.fromJSON(request.requestBody());
                     clusterProfileProperties = createAgentRequest.getClusterProfileProperties();
                     refreshInstancesForCluster(clusterProfileProperties);
-                    return createAgentRequest.executor(getAgentInstancesFor(clusterProfileProperties), pluginRequest).execute();
+                    return createAgentRequest.executor(getAgentInstancesForCluster(clusterProfileProperties), pluginRequest).execute();
 
                 case REQUEST_SERVER_PING:
                     ServerPingRequest serverPingRequest = ServerPingRequest.fromJSON(request.requestBody());
@@ -94,7 +94,7 @@ public class Ec2Plugin implements GoPlugin {
                     JobCompletionRequest jobCompletionRequest = JobCompletionRequest.fromJSON(request.requestBody());
                     clusterProfileProperties = jobCompletionRequest.getClusterProfileProperties();
                     refreshInstancesForCluster(clusterProfileProperties);
-                    return jobCompletionRequest.executor(getAgentInstancesFor(clusterProfileProperties), pluginRequest).execute();
+                    return jobCompletionRequest.executor(getAgentInstancesForCluster(clusterProfileProperties), pluginRequest).execute();
 
                 case REQUEST_CAPABILITIES:
                     return new GetCapabilitiesExecutor().execute();
@@ -151,7 +151,7 @@ public class Ec2Plugin implements GoPlugin {
         clusterSpecificAgentInstances.put(clusterProfileProperties.uuid(), agentInstances);
     }
 
-    private AgentInstances<Ec2Instance> getAgentInstancesFor(ClusterProfileProperties clusterProfileProperties) {
+    private Ec2AgentInstances getAgentInstancesForCluster(ClusterProfileProperties clusterProfileProperties) {
         return clusterSpecificAgentInstances.get(clusterProfileProperties.uuid());
     }
 
