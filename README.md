@@ -21,14 +21,14 @@ and restart the server.
 
 Prepare [AMI](#amazon-machine-image), [security groups](#security-groups) and [subnets](#subnets) for the agents.
 
-Tested on GoCD server version 19.11.0.
+Tested on GoCD server versions 19.11.0 and 19.12.0.
 
 ### Amazon Machine Image
 
 This is the most important step, where you will prepare a base image for the agents. 
 Create new clean EC2 instance and install there all the tools and configurations that your agents may need. 
 After that, follow up [the official guide](https://docs.gocd.org/current/installation/install/agent/linux.html) to install Go-Agent. Do not connect it to the 
-server yet, nor enable auto startup of go-agent.service! All this will be done by the plugin itself with help from user data scripts.
+server yet, nor enable auto startup of go-agent.service! All this will be done by the plugin itself with the help of the user data scripts.
 Before stopping this instance perform cleanup with the following commands:
 ```bash
 rm -rf /var/lib/cloud/*
