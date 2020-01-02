@@ -32,20 +32,17 @@ import software.amazon.awssdk.services.ec2.model.*;
 import java.util.*;
 
 import static com.continuumsecurity.elasticagent.ec2.Ec2Plugin.LOG;
-import static org.apache.commons.codec.binary.Base64.encodeBase64String;
 
 public class Ec2Instance {
     private final DateTime createdAt;
     private final Map<String, String> properties;
-    private final String environment;
     private final JobIdentifier jobIdentifier;
     private String id;
 
-    public Ec2Instance(String id, Date createdAt, Map<String, String> properties, String environment, JobIdentifier jobIdentifier) {
+    public Ec2Instance(String id, Date createdAt, Map<String, String> properties, JobIdentifier jobIdentifier) {
         this.id = id;
         this.createdAt = new DateTime(createdAt);
         this.properties = properties;
-        this.environment = environment;
         this.jobIdentifier = jobIdentifier;
     }
 
@@ -57,29 +54,29 @@ public class Ec2Instance {
         return createdAt;
     }
 
-    public String environment() {
-        return environment;
-    }
-
     public Map<String, String> properties() {
         return properties;
     }
 
-    public JobIdentifier jobIdentifier() {
+    public JobIdentifier getJobIdentifier() {
         return jobIdentifier;
     }
 
-    public static Ec2Instance create(CreateAgentRequest request, PluginSettings settings) {
+    public static Ec2Instance create(CreateAgentRequest request, PluginSettings settings, ConsoleLogAppender consoleLogAppender) {
+
+        LOG.debug("Creating new instance for " + request.jobIdentifier().getRepresentation());
 
         Ec2Client ec2 = createEc2Client(settings.getAwsAccessKeyId(), settings.getAwsSecretAccessKey(), settings.getAwsRegion());
 
         String userdata = "#!/bin/bash\n" +
-                "echo \"GO_SERVER_URL=" + settings.getGoServerUrl() + "\" > /etc/default/go-agent\n" +
-                "chown -R go:go /etc/default/go-agent\n" +
-                "echo \"agent.auto.register.key=" + request.autoRegisterKey() + "\" > /usr/share/go-agent/config/autoregister.properties\n" +
-                "echo \"agent.auto.register.hostname=EA_$(ec2-metadata --instance-id | cut -d \" \" -f 2)\" >> /usr/share/go-agent/config/autoregister.properties\n" +
-                "echo \"agent.auto.register.elasticAgent.agentId=$(ec2-metadata --instance-id | cut -d \" \" -f 2)\" >> /usr/share/go-agent/config/autoregister.properties\n" +
-                "echo \"agent.auto.register.elasticAgent.pluginId=" + Constants.PLUGIN_ID + "\" >> /usr/share/go-agent/config/autoregister.properties\n" +
+                "sed -i \"s,https://localhost:8154/go," + settings.getGoServerUrl() + ",g\" /usr/share/go-agent/wrapper-config/wrapper-properties.conf\n" +
+                "mkdir -p /var/lib/go-agent/config\n" +
+                "echo \"agent.auto.register.key=" + request.autoRegisterKey() + "\" > /var/lib/go-agent/config/autoregister.properties\n" +
+                "echo \"agent.auto.register.hostname=EA_$(ec2-metadata --instance-id | cut -d \" \" -f 2)\" >> /var/lib/go-agent/config/autoregister.properties\n" +
+                "echo \"agent.auto.register.elasticAgent.agentId=$(ec2-metadata --instance-id | cut -d \" \" -f 2)\" >> /var/lib/go-agent/config/autoregister.properties\n" +
+                "echo \"agent.auto.register.elasticAgent.pluginId=" + Constants.PLUGIN_ID + "\" >> /var/lib/go-agent/config/autoregister.properties\n" +
+                "chown -R go:go /var/log/go-agent/\n" +
+                "chown -R go:go /var/lib/go-agent/\n" +
                 "chown -R go:go /usr/share/go-agent/\n" +
                 "systemctl start go-agent.service\n";
 
@@ -87,7 +84,7 @@ public class Ec2Instance {
             userdata += request.properties().get("ec2_user_data") + "\n";
         }
 
-        List<String> security_groups = Arrays.asList(request.properties().get("ec2_sg").split("\\s*,\\s*"));
+        List<String> securityGroups = Arrays.asList(request.properties().get("ec2_sg").split("\\s*,\\s*"));
         List<String> subnets = Arrays.asList(request.properties().get("ec2_subnets").split("\\s*,\\s*"));
         // subnet is assigned randomly from all the subnets configured
         Collections.shuffle(subnets);
@@ -166,17 +163,19 @@ public class Ec2Instance {
                         .maxCount(1)
                         .minCount(1)
                         .keyName(request.properties().get("ec2_key"))
-                        .securityGroupIds(security_groups)
+                        .securityGroupIds(securityGroups)
                         .subnetId(subnets.get(i))
-                        .userData(encodeBase64String(userdata.getBytes()))
+                        .userData(Base64.getEncoder().encodeToString(userdata.getBytes()))
                         .tagSpecifications(tagSpecification)
                         .build();
 
                 response = ec2.runInstances(runInstancesRequest);
                 result = true;
 
+                consoleLogAppender.accept("Successfully created new instance " + response.instances().get(0).instanceId() + " in " + response.instances().get(0).subnetId());
                 LOG.info("Successfully created new instance " + response.instances().get(0).instanceId() + " in " + response.instances().get(0).subnetId());
             } catch (AwsServiceException | SdkClientException e) {
+                consoleLogAppender.accept("Could not create instance. " + e.getMessage());
                 LOG.error("Could not create instance", e);
                 response = null;
             } finally {
@@ -187,17 +186,23 @@ public class Ec2Instance {
         if (i < subnets.size() && response != null) {
             Instance instance = response.instances().get(0);
 
-            return new Ec2Instance(instance.instanceId(), Date.from(instance.launchTime()), request.properties(), request.environment(), request.jobIdentifier());
+            return new Ec2Instance(instance.instanceId(), Date.from(instance.launchTime()), request.properties(), request.jobIdentifier());
         } else {
+            consoleLogAppender.accept("Could not create instance in any provided subnet!");
             LOG.error("Could not create instance in any provided subnet!");
         }
 
         return null;
     }
 
-    public void terminate(PluginSettings settings) {
+    public void terminate(ClusterProfileProperties clusterProfileProperties) {
 
-        Ec2Client ec2 = createEc2Client(settings.getAwsAccessKeyId(), settings.getAwsSecretAccessKey(), settings.getAwsRegion());
+        LOG.debug("Terminating instance " + this.id());
+
+        Ec2Client ec2 = createEc2Client(
+                clusterProfileProperties.getAwsAccessKeyId(),
+                clusterProfileProperties.getAwsSecretAccessKey(),
+                clusterProfileProperties.getAwsRegion());
 
         TerminateInstancesRequest request = TerminateInstancesRequest.builder()
                 .instanceIds(this.id).build();
@@ -205,7 +210,7 @@ public class Ec2Instance {
         try {
             ec2.terminateInstances(request);
 
-            LOG.info("Successfully terminated EC2 instance " + this.id + " in region " + settings.getAwsRegion());
+            LOG.info("Successfully terminated EC2 instance " + this.id + " in region " + clusterProfileProperties.getAwsRegion());
         } catch (AwsServiceException | SdkClientException e) {
             LOG.error("Could not terminate instance", e);
             System.exit(1);

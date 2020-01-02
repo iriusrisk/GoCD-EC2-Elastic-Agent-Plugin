@@ -18,30 +18,59 @@
 
 package com.continuumsecurity.elasticagent.ec2.executors;
 
-import com.continuumsecurity.elasticagent.ec2.PluginRequest;
-import com.continuumsecurity.elasticagent.ec2.PluginSettings;
+import com.continuumsecurity.elasticagent.ec2.*;
 import com.continuumsecurity.elasticagent.ec2.models.JobIdentifier;
 import com.continuumsecurity.elasticagent.ec2.requests.JobCompletionRequest;
-
+import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.InOrder;
+import org.mockito.Mock;
 
-import com.continuumsecurity.elasticagent.ec2.AgentInstance;
+import java.util.HashMap;
+import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.MockitoAnnotations.initMocks;
 
 public class JobCompletionRequestExecutorTest {
+
+    @Mock
+    private PluginRequest mockPluginRequest;
+    @Mock
+    private AgentInstances<Ec2Instance> mockAgentInstances;
+    @Captor
+    private ArgumentCaptor<List<Agent>> agentsArgumentCaptor;
+
+    @BeforeEach
+    public void setUp() {
+        initMocks(this);
+    }
+
     @Test
     public void shouldAskDockerContainersToCreateAnAgent() throws Exception {
+        JobIdentifier jobIdentifier = new JobIdentifier(100L);
+        ClusterProfileProperties clusterProfileProperties = new ClusterProfileProperties();
         String elasticAgentId = "agent-id";
-        JobCompletionRequest request = new JobCompletionRequest(elasticAgentId, new JobIdentifier());
-        AgentInstance agentInstances = mock(AgentInstance.class);
-        PluginRequest pluginRequest = mock(PluginRequest.class);
-        PluginSettings settings = mock(PluginSettings.class);
-        when(pluginRequest.getPluginSettings()).thenReturn(settings);
-        new JobCompletionRequestExecutor(request, agentInstances, pluginRequest).execute();
+        JobCompletionRequest request = new JobCompletionRequest(elasticAgentId, jobIdentifier, new HashMap<>(), clusterProfileProperties);
+        AgentInstances agentInstances = mock(AgentInstances.class);
+        GoPluginApiResponse response = new JobCompletionRequestExecutor(request, mockAgentInstances, mockPluginRequest).execute();
 
-        verify(agentInstances).terminate(elasticAgentId, settings);
+        InOrder inOrder = inOrder(mockPluginRequest, mockAgentInstances);
+        inOrder.verify(mockPluginRequest).disableAgents(agentsArgumentCaptor.capture());
+        List<Agent> agentsToDisabled = agentsArgumentCaptor.getValue();
+        assertEquals(1, agentsToDisabled.size());
+        assertEquals(elasticAgentId, agentsToDisabled.get(0).elasticAgentId());
+        inOrder.verify(mockAgentInstances).terminate(elasticAgentId, clusterProfileProperties);
+        inOrder.verify(mockPluginRequest).deleteAgents(agentsArgumentCaptor.capture());
+        List<Agent> agentsToDelete = agentsArgumentCaptor.getValue();
+        assertEquals(agentsToDisabled, agentsToDelete);
+        assertEquals(200, response.responseCode());
+        assertTrue(response.responseBody().isEmpty());
     }
 }

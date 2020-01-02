@@ -18,21 +18,16 @@
 
 package com.continuumsecurity.elasticagent.ec2.executors;
 
+import com.continuumsecurity.elasticagent.ec2.utils.Util;
 import com.google.gson.Gson;
-
 import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
-
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import com.continuumsecurity.elasticagent.ec2.utils.Util;
-
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 
 public class GetProfileViewExecutorTest {
     @Test

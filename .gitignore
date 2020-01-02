@@ -40,3 +40,7 @@ cmake-build-*/
 # local test files
 Test.java
 Properties.java
+
+.tags
+.tags1
+src/main/resources-generated/

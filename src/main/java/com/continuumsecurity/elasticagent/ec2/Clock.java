@@ -24,11 +24,16 @@ import org.joda.time.Period;
 public interface Clock {
     DateTime now();
 
-    Clock DEFAULT = DateTime::new;
+    Clock DEFAULT = new Clock() {
+        @Override
+        public DateTime now() {
+            return new DateTime();
+        }
+    };
 
     class TestClock implements Clock {
 
-        DateTime time;
+        DateTime time = null;
 
         public TestClock(DateTime time) {
             this.time = time;

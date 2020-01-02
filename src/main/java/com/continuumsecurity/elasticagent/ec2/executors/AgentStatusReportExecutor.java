@@ -18,8 +18,8 @@
 
 package com.continuumsecurity.elasticagent.ec2.executors;
 
-import com.google.gson.JsonObject;
-
+import com.continuumsecurity.elasticagent.ec2.Ec2AgentInstances;
+import com.continuumsecurity.elasticagent.ec2.Ec2Instance;
 import com.continuumsecurity.elasticagent.ec2.PluginRequest;
 import com.continuumsecurity.elasticagent.ec2.models.AgentStatusReport;
 import com.continuumsecurity.elasticagent.ec2.models.ExceptionMessage;
@@ -27,39 +27,37 @@ import com.continuumsecurity.elasticagent.ec2.models.JobIdentifier;
 import com.continuumsecurity.elasticagent.ec2.models.NotRunningAgentStatusReport;
 import com.continuumsecurity.elasticagent.ec2.requests.AgentStatusReportRequest;
 import com.continuumsecurity.elasticagent.ec2.views.ViewBuilder;
+import com.google.gson.JsonObject;
 import com.thoughtworks.go.plugin.api.logging.Logger;
 import com.thoughtworks.go.plugin.api.response.DefaultGoPluginApiResponse;
 import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
-
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
-
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 
-import com.continuumsecurity.elasticagent.ec2.AgentInstance;
-import com.continuumsecurity.elasticagent.ec2.Ec2Instance;
+import static java.lang.String.format;
 
 public class AgentStatusReportExecutor {
     private static final Logger LOG = Logger.getLoggerFor(AgentStatusReportExecutor.class);
     private final AgentStatusReportRequest request;
     private final PluginRequest pluginRequest;
-    private final AgentInstance<Ec2Instance> agentInstances;
+    private final Ec2AgentInstances ec2AgentInstances;
     private final ViewBuilder viewBuilder;
 
     public AgentStatusReportExecutor(AgentStatusReportRequest request, PluginRequest pluginRequest,
-                                     AgentInstance<Ec2Instance> agentInstances, ViewBuilder viewBuilder) {
+                                     Ec2AgentInstances ec2AgentInstances, ViewBuilder viewBuilder) {
         this.request = request;
         this.pluginRequest = pluginRequest;
-        this.agentInstances = agentInstances;
+        this.ec2AgentInstances = ec2AgentInstances;
         this.viewBuilder = viewBuilder;
     }
 
     public GoPluginApiResponse execute() throws Exception {
         String elasticAgentId = request.getElasticAgentId();
         JobIdentifier jobIdentifier = request.getJobIdentifier();
-        LOG.info(String.format("[status-report] Generating status report for agent: %s with job: %s", elasticAgentId, jobIdentifier));
+        LOG.info(format("[status-report] Generating status report for agent: %s with job: %s", elasticAgentId, jobIdentifier));
 
         try {
             if (StringUtils.isNotBlank(elasticAgentId)) {
@@ -67,27 +65,29 @@ public class AgentStatusReportExecutor {
             }
             return getStatusReportUsingJobIdentifier(jobIdentifier);
         } catch (Exception e) {
-            LOG.error("Exception while generating agent status report", e);
+            LOG.debug("Exception while generating agent status report", e);
             final String statusReportView = viewBuilder.build(viewBuilder.getTemplate("error.template.ftlh"), new ExceptionMessage(e));
+
             return constructResponseForReport(statusReportView);
         }
     }
 
     private GoPluginApiResponse getStatusReportUsingJobIdentifier(JobIdentifier jobIdentifier) throws Exception {
-        Ec2Instance agentInstance = agentInstances.find(jobIdentifier);
+        Ec2Instance agentInstance = ec2AgentInstances.find(jobIdentifier);
         if (agentInstance != null) {
-            AgentStatusReport agentStatusReport = agentInstances.getAgentStatusReport(pluginRequest.getPluginSettings(), agentInstance);
-            String statusReportView = viewBuilder.build(viewBuilder.getTemplate("agent-status-report.template.ftlh"), agentStatusReport);
+            AgentStatusReport agentStatusReport = ec2AgentInstances.getAgentStatusReport(request.getClusterProfile(), agentInstance);
+            final String statusReportView = viewBuilder.build(viewBuilder.getTemplate("agent-status-report.template.ftlh"), agentStatusReport);
             return constructResponseForReport(statusReportView);
         }
+
         return containerNotFoundApiResponse(jobIdentifier);
     }
 
     private GoPluginApiResponse getStatusReportUsingElasticAgentId(String elasticAgentId) throws Exception {
-        Ec2Instance agentInstance = agentInstances.find(elasticAgentId);
+        Ec2Instance agentInstance = ec2AgentInstances.find(elasticAgentId);
         if (agentInstance != null) {
-            AgentStatusReport agentStatusReport = agentInstances.getAgentStatusReport(pluginRequest.getPluginSettings(), agentInstance);
-            String statusReportView = viewBuilder.build(viewBuilder.getTemplate("agent-status-report.template.ftlh"), agentStatusReport);
+            AgentStatusReport agentStatusReport = ec2AgentInstances.getAgentStatusReport(request.getClusterProfile(), agentInstance);
+            final String statusReportView = viewBuilder.build(viewBuilder.getTemplate("agent-status-report.template.ftlh"), agentStatusReport);
             return constructResponseForReport(statusReportView);
         }
         return containerNotFoundApiResponse(elasticAgentId);
@@ -96,18 +96,19 @@ public class AgentStatusReportExecutor {
     private GoPluginApiResponse constructResponseForReport(String statusReportView) {
         JsonObject responseJSON = new JsonObject();
         responseJSON.addProperty("view", statusReportView);
+
         return DefaultGoPluginApiResponse.success(responseJSON.toString());
     }
 
     private GoPluginApiResponse containerNotFoundApiResponse(JobIdentifier jobIdentifier) throws IOException, TemplateException {
         Template template = viewBuilder.getTemplate("not-running-agent-status-report.template.ftlh");
-        String statusReportView = viewBuilder.build(template, new NotRunningAgentStatusReport(jobIdentifier));
+        final String statusReportView = viewBuilder.build(template, new NotRunningAgentStatusReport(jobIdentifier));
         return constructResponseForReport(statusReportView);
     }
 
     private GoPluginApiResponse containerNotFoundApiResponse(String elasticAgentId) throws IOException, TemplateException {
         Template template = viewBuilder.getTemplate("not-running-agent-status-report.template.ftlh");
-        String statusReportView = viewBuilder.build(template, new NotRunningAgentStatusReport(elasticAgentId));
+        final String statusReportView = viewBuilder.build(template, new NotRunningAgentStatusReport(elasticAgentId));
         return constructResponseForReport(statusReportView);
     }
 }

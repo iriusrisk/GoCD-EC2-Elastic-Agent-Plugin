@@ -18,6 +18,7 @@
 
 package com.continuumsecurity.elasticagent.ec2.requests;
 
+import com.continuumsecurity.elasticagent.ec2.ClusterProfileProperties;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
@@ -26,6 +27,7 @@ import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 
 public class CreateAgentRequestTest {
 
@@ -33,20 +35,28 @@ public class CreateAgentRequestTest {
     public void shouldDeserializeFromJSON() throws Exception {
         String json = "{\n" +
                 "  \"auto_register_key\": \"secret-key\",\n" +
-                "  \"properties\": {\n" +
+                "  \"elastic_agent_profile_properties\": {\n" +
                 "    \"key1\": \"value1\",\n" +
                 "    \"key2\": \"value2\"\n" +
                 "  },\n" +
-                "  \"environment\": \"prod\"\n" +
+                "  \"cluster_profile_properties\": {\n" +
+                "    \"go_server_url\": \"https://foo.com/go\",\n" +
+                "    \"auto_register_timeout\": \"10\"\n" +
+                "  }\n" +
                 "}";
 
         CreateAgentRequest request = CreateAgentRequest.fromJSON(json);
         assertThat(request.autoRegisterKey(), equalTo("secret-key"));
-        assertThat(request.environment(), equalTo("prod"));
         HashMap<String, String> expectedProperties = new HashMap<>();
         expectedProperties.put("key1", "value1");
         expectedProperties.put("key2", "value2");
         assertThat(request.properties(), Matchers.<Map<String, String>>equalTo(expectedProperties));
+
+        ClusterProfileProperties expectedClusterProfileProperties = new ClusterProfileProperties();
+        expectedClusterProfileProperties.setGoServerUrl("https://foo.com/go");
+        expectedClusterProfileProperties.setAutoRegisterTimeout("10");
+
+        assertThat(request.getClusterProfileProperties(), is(expectedClusterProfileProperties));
 
     }
 }

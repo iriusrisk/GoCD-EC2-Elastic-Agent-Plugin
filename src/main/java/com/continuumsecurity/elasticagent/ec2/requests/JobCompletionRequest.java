@@ -18,37 +18,64 @@
 
 package com.continuumsecurity.elasticagent.ec2.requests;
 
+import com.continuumsecurity.elasticagent.ec2.*;
+import com.continuumsecurity.elasticagent.ec2.executors.JobCompletionRequestExecutor;
+import com.continuumsecurity.elasticagent.ec2.models.JobIdentifier;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
 
-import com.continuumsecurity.elasticagent.ec2.AgentInstance;
-import com.continuumsecurity.elasticagent.ec2.Ec2Instance;
-import com.continuumsecurity.elasticagent.ec2.PluginRequest;
-import com.continuumsecurity.elasticagent.ec2.RequestExecutor;
-import com.continuumsecurity.elasticagent.ec2.executors.JobCompletionRequestExecutor;
-import com.continuumsecurity.elasticagent.ec2.models.JobIdentifier;
+import java.util.Map;
 
 public class JobCompletionRequest {
-    public static final Gson GSON = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
+
+    private static final Gson GSON = new GsonBuilder().excludeFieldsWithoutExposeAnnotation()
+            .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+            .create();
 
     @Expose
+    @SerializedName("elastic_agent_id")
     private String elasticAgentId;
+
     @Expose
+    @SerializedName("job_identifier")
     private JobIdentifier jobIdentifier;
+
+    @Expose
+    @SerializedName("elastic_agent_profile_properties")
+    private Map<String, String> elasticAgentProfileProperties;
+
+    @Expose
+    @SerializedName("cluster_profile_properties")
+    private ClusterProfileProperties clusterProfileProperties;
 
     public JobCompletionRequest() {
     }
 
-    public JobCompletionRequest(String elasticAgentId, JobIdentifier jobIdentifier) {
+    public JobCompletionRequest(String elasticAgentId,
+                                JobIdentifier jobIdentifier,
+                                Map<String, String> elasticAgentProfileProperties,
+                                Map<String, String> clusterProfile) {
         this.elasticAgentId = elasticAgentId;
         this.jobIdentifier = jobIdentifier;
+        this.elasticAgentProfileProperties = elasticAgentProfileProperties;
+        this.clusterProfileProperties = ClusterProfileProperties.fromConfiguration(clusterProfile);
+    }
+
+    public JobCompletionRequest(String elasticAgentId,
+                                JobIdentifier jobIdentifier,
+                                Map<String, String> elasticAgentProfileProperties,
+                                ClusterProfileProperties clusterProfileProperties) {
+        this.elasticAgentId = elasticAgentId;
+        this.jobIdentifier = jobIdentifier;
+        this.elasticAgentProfileProperties = elasticAgentProfileProperties;
+        this.clusterProfileProperties = clusterProfileProperties;
     }
 
     public static JobCompletionRequest fromJSON(String json) {
-        JobCompletionRequest jobCompletionRequest = GSON.fromJson(json, JobCompletionRequest.class);
-        return jobCompletionRequest;
+        return GSON.fromJson(json, JobCompletionRequest.class);
     }
 
     public String getElasticAgentId() {
@@ -59,8 +86,16 @@ public class JobCompletionRequest {
         return jobIdentifier;
     }
 
-    public RequestExecutor executor(AgentInstance<Ec2Instance> agentInstances, PluginRequest pluginRequest) {
+    public RequestExecutor executor(AgentInstances<Ec2Instance> agentInstances, PluginRequest pluginRequest) {
         return new JobCompletionRequestExecutor(this, agentInstances, pluginRequest);
+    }
+
+    public Map<String, String> getProperties() {
+        return elasticAgentProfileProperties;
+    }
+
+    public ClusterProfileProperties getClusterProfileProperties() {
+        return clusterProfileProperties;
     }
 
     @Override
@@ -68,6 +103,8 @@ public class JobCompletionRequest {
         return "JobCompletionRequest{" +
                 "elasticAgentId='" + elasticAgentId + '\'' +
                 ", jobIdentifier=" + jobIdentifier +
+                ", elasticAgentProfileProperties=" + elasticAgentProfileProperties +
+                ", clusterProfileProperties=" + clusterProfileProperties +
                 '}';
     }
 }

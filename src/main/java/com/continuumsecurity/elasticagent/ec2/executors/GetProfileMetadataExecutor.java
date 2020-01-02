@@ -18,10 +18,9 @@
 
 package com.continuumsecurity.elasticagent.ec2.executors;
 
+import com.continuumsecurity.elasticagent.ec2.RequestExecutor;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
-import com.continuumsecurity.elasticagent.ec2.RequestExecutor;
 import com.thoughtworks.go.plugin.api.response.DefaultGoPluginApiResponse;
 import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
 

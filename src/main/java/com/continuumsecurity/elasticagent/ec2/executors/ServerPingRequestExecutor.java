@@ -18,67 +18,87 @@
 
 package com.continuumsecurity.elasticagent.ec2.executors;
 
-import com.continuumsecurity.elasticagent.ec2.PluginRequest;
-import com.continuumsecurity.elasticagent.ec2.RequestExecutor;
+import com.continuumsecurity.elasticagent.ec2.*;
+import com.continuumsecurity.elasticagent.ec2.requests.ServerPingRequest;
 import com.thoughtworks.go.plugin.api.response.DefaultGoPluginApiResponse;
 import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
 
-import java.util.Collection;
-
-import com.continuumsecurity.elasticagent.ec2.Agent;
-import com.continuumsecurity.elasticagent.ec2.AgentInstance;
-import com.continuumsecurity.elasticagent.ec2.Agents;
-import com.continuumsecurity.elasticagent.ec2.PluginSettings;
-import com.continuumsecurity.elasticagent.ec2.ServerRequestFailedException;
+import java.util.*;
 
 import static com.continuumsecurity.elasticagent.ec2.Ec2Plugin.LOG;
 
 public class ServerPingRequestExecutor implements RequestExecutor {
 
-    private final AgentInstance agentInstances;
+    private final ServerPingRequest serverPingRequest;
+    private final Map<String, Ec2AgentInstances> clusterSpecificAgentInstances;
     private final PluginRequest pluginRequest;
 
-    public ServerPingRequestExecutor(AgentInstance agentInstances, PluginRequest pluginRequest) {
-        this.agentInstances = agentInstances;
+    public ServerPingRequestExecutor(ServerPingRequest serverPingRequest, Map<String, Ec2AgentInstances> clusterSpecificAgentInstances, PluginRequest pluginRequest) {
+        this.serverPingRequest = serverPingRequest;
+        this.clusterSpecificAgentInstances = clusterSpecificAgentInstances;
         this.pluginRequest = pluginRequest;
     }
 
     @Override
     public GoPluginApiResponse execute() throws Exception {
-        PluginSettings pluginSettings = pluginRequest.getPluginSettings();
+        Set<Agent> possiblyMissingAgents = new HashSet<>();
+        List<ClusterProfileProperties> allClusterProfileProperties = serverPingRequest.allClusterProfileProperties();
 
+        for (ClusterProfileProperties clusterProfileProperties : allClusterProfileProperties) {
+            performCleanupForACluster(clusterProfileProperties, clusterSpecificAgentInstances.get(clusterProfileProperties.uuid()), possiblyMissingAgents);
+        }
+
+        refreshInstancesAgainToCheckForPossiblyMissingAgents(allClusterProfileProperties, possiblyMissingAgents);
+        return DefaultGoPluginApiResponse.success("");
+    }
+
+    private void performCleanupForACluster(ClusterProfileProperties clusterProfileProperties, Ec2AgentInstances ec2AgentInstances, Set<Agent> possiblyMissingAgents) throws Exception {
         Agents allAgents = pluginRequest.listAgents();
-        Agents missingAgents = new Agents();
 
         for (Agent agent : allAgents.agents()) {
-            if (agentInstances.find(agent.elasticAgentId()) == null) {
-                LOG.warn("Was expecting an instance with name " + agent.elasticAgentId() + ", but it was missing!");
-                missingAgents.add(agent);
+            if (ec2AgentInstances.find(agent.elasticAgentId()) == null) {
+                possiblyMissingAgents.add(agent);
+            } else {
+                possiblyMissingAgents.remove(agent);
             }
         }
 
-        Agents agentsToDisable = agentInstances.instancesCreatedAfterTimeout(pluginSettings, allAgents);
-        agentsToDisable.addAll(missingAgents);
-
+        Agents agentsToDisable = ec2AgentInstances.instancesCreatedAfterTimeout(clusterProfileProperties, allAgents);
         disableIdleAgents(agentsToDisable);
 
         allAgents = pluginRequest.listAgents();
-        terminateDisabledAgents(allAgents, pluginSettings);
+        terminateDisabledAgents(allAgents, clusterProfileProperties, ec2AgentInstances);
 
-        agentInstances.terminateUnregisteredInstances(pluginSettings, allAgents);
+        ec2AgentInstances.terminateUnregisteredInstances(clusterProfileProperties, allAgents);
+    }
 
-        return DefaultGoPluginApiResponse.success("");
+    private void refreshInstancesAgainToCheckForPossiblyMissingAgents(List<ClusterProfileProperties> allClusterProfileProperties, Set<Agent> possiblyMissingAgents) throws Exception {
+        Ec2AgentInstances ec2AgentInstances = new Ec2AgentInstances();
+        for (ClusterProfileProperties clusterProfileProperties : allClusterProfileProperties) {
+            ec2AgentInstances.refreshAll(clusterProfileProperties);
+        }
+
+        Agents missingAgents = new Agents();
+        for (Agent possiblyMissingAgent : possiblyMissingAgents) {
+            if (!ec2AgentInstances.hasInstance(possiblyMissingAgent.elasticAgentId())) {
+                LOG.warn("[Server Ping] Was expecting an instance " + possiblyMissingAgent.elasticAgentId() + ", but it was missing!");
+                missingAgents.add(possiblyMissingAgent);
+            }
+        }
+
+        pluginRequest.disableAgents(missingAgents.agents());
+        pluginRequest.deleteAgents(missingAgents.agents());
     }
 
     private void disableIdleAgents(Agents agents) throws ServerRequestFailedException {
         pluginRequest.disableAgents(agents.findInstancesToDisable());
     }
 
-    private void terminateDisabledAgents(Agents agents, PluginSettings pluginSettings) throws Exception {
+    private void terminateDisabledAgents(Agents agents, ClusterProfileProperties clusterProfileProperties, Ec2AgentInstances ec2AgentInstances) throws Exception {
         Collection<Agent> toBeDeleted = agents.findInstancesToTerminate();
 
         for (Agent agent : toBeDeleted) {
-            agentInstances.terminate(agent.elasticAgentId(), pluginSettings);
+            ec2AgentInstances.terminate(agent.elasticAgentId(), clusterProfileProperties);
         }
 
         pluginRequest.deleteAgents(toBeDeleted);

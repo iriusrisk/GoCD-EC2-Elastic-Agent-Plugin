@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 ThoughtWorks, Inc.
+ * Copyright 2016 ThoughtWorks, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,28 +12,28 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * This file incorporates changes by @continuumsecurity
  */
 
 package com.continuumsecurity.elasticagent.ec2.executors;
 
+import com.continuumsecurity.elasticagent.ec2.RequestExecutor;
+import com.continuumsecurity.elasticagent.ec2.utils.Util;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-
-import com.continuumsecurity.elasticagent.ec2.RequestExecutor;
 import com.thoughtworks.go.plugin.api.response.DefaultGoPluginApiResponse;
 import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
 
-import com.continuumsecurity.elasticagent.ec2.utils.Util;
+import java.util.Base64;
 
-public class GetViewRequestExecutor implements RequestExecutor {
+public class GetPluginIconExecutor implements RequestExecutor {
     private static final Gson GSON = new Gson();
 
     @Override
     public GoPluginApiResponse execute() throws Exception {
         JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("template", Util.readResource("/plugin-settings.template.html"));
+        jsonObject.addProperty("content_type", "image/svg+xml");
+        jsonObject.addProperty("data", Base64.getEncoder().encodeToString(Util.readResourceBytes("/plugin-icon.svg")));
         return new DefaultGoPluginApiResponse(200, GSON.toJson(jsonObject));
+
     }
 }

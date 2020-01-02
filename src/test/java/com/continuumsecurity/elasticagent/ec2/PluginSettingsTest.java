@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 ThoughtWorks, Inc.
+ * Copyright 2019 ThoughtWorks, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,18 +27,13 @@ public class PluginSettingsTest {
     @Test
     public void shouldDeserializeFromJSON() throws Exception {
         PluginSettings pluginSettings = PluginSettings.fromJSON("{" +
-                "\"go_server_url\": \"https://cloud.example.com:8154/go\", " +
-                "\"auto_register_timeout\": \"5\", " +
-                "\"max_elastic_agents\": \"50\", " +
-                "\"aws_access_key_id\": \"SDUI2910ASJDH1012H1P\", " +
-                "\"aws_secret_access_key\": \"ASnkmasd872jas+asd11KJSHjks8nasd1n8sFQHd\", " +
-                "\"aws_region\": \"eu-west-1\"" +
+                "\"go_server_url\": \"https://example.com/go\", " +
+                "\"aws_access_key_id\": \"123456\", " +
+                "\"aws_secret_access_key\": \"7890\" " +
                 "}");
 
-        assertThat(pluginSettings.getGoServerUrl(), is("https://cloud.example.com:8154/go"));
-        assertThat(pluginSettings.getAutoRegisterTimeout(), is("5"));
-        assertThat(pluginSettings.getMaxElasticAgents(), is(50));
-        assertThat(pluginSettings.getAwsAccessKeyId(), is("SDUI2910ASJDH1012H1P"));
-        assertThat(pluginSettings.getAwsSecretAccessKey(), is("ASnkmasd872jas+asd11KJSHjks8nasd1n8sFQHd"));
+        assertThat(pluginSettings.getGoServerUrl(), is("https://example.com/go"));
+        assertThat(pluginSettings.getAwsAccessKeyId(), is("123456"));
+        assertThat(pluginSettings.getAwsSecretAccessKey(), is("7890"));
     }
 }

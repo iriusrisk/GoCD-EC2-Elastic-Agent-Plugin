@@ -1,36 +1,47 @@
+/*
+ * Copyright 2019 ThoughtWorks, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * This file incorporates changes by @continuumsecurity
+ */
+
 package com.continuumsecurity.elasticagent.ec2.executors;
 
-import com.google.gson.JsonObject;
-
-import com.continuumsecurity.elasticagent.ec2.BaseTest;
-import com.continuumsecurity.elasticagent.ec2.Ec2Instance;
-import com.continuumsecurity.elasticagent.ec2.PluginRequest;
-import com.continuumsecurity.elasticagent.ec2.PluginSettings;
-import com.continuumsecurity.elasticagent.ec2.Properties;
+import com.continuumsecurity.elasticagent.ec2.*;
 import com.continuumsecurity.elasticagent.ec2.models.AgentStatusReport;
 import com.continuumsecurity.elasticagent.ec2.models.JobIdentifier;
 import com.continuumsecurity.elasticagent.ec2.models.NotRunningAgentStatusReport;
 import com.continuumsecurity.elasticagent.ec2.requests.AgentStatusReportRequest;
 import com.continuumsecurity.elasticagent.ec2.views.ViewBuilder;
+import com.google.gson.JsonObject;
 import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
-
 import freemarker.template.Template;
-
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.skyscreamer.jsonassert.JSONAssert;
-
-import java.util.Date;
-import java.util.HashMap;
-
-import com.continuumsecurity.elasticagent.ec2.AgentInstance;
-
 import software.amazon.awssdk.services.ec2.model.CpuOptions;
 import software.amazon.awssdk.services.ec2.model.Instance;
 import software.amazon.awssdk.services.ec2.model.InstanceState;
 import software.amazon.awssdk.services.ec2.model.Placement;
+
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -46,7 +57,7 @@ public class AgentStatusReportExecutorTest extends BaseTest {
     @Mock
     private PluginSettings pluginSettings;
     @Mock
-    private AgentInstance<Ec2Instance> agentInstances;
+    private Ec2AgentInstances agentInstances;
     @Mock
     private ViewBuilder viewBuilder;
     @Mock
@@ -59,6 +70,14 @@ public class AgentStatusReportExecutorTest extends BaseTest {
     private Placement placement;
     @Mock
     private CpuOptions cpuOptions;
+    private Map<String, String> clusterProfileConfigurations;
+    private ClusterProfileProperties clusterProfile;
+
+    @BeforeEach
+    public void setup() {
+        clusterProfileConfigurations = Collections.singletonMap("go_server_url", "http://go-server-url/go");
+        clusterProfile = ClusterProfileProperties.fromConfiguration(clusterProfileConfigurations);
+    }
 
     private void mockInstance() {
         when(instance.instanceId()).thenReturn("i-123456test");
@@ -90,12 +109,12 @@ public class AgentStatusReportExecutorTest extends BaseTest {
         mockInstance();
 
         String agentId = "elastic-agent-id";
-        AgentStatusReportRequest agentStatusReportRequest = new AgentStatusReportRequest(agentId, null);
+        AgentStatusReportRequest agentStatusReportRequest = new AgentStatusReportRequest(agentId, null, clusterProfile);
         AgentStatusReport agentStatusReport = new AgentStatusReport(null, instance, null);
-        when(pluginRequest.getPluginSettings()).thenReturn(pluginSettings);
-        Ec2Instance agentInstance = new Ec2Instance("id", new Date(), new HashMap<>(), null, new JobIdentifier());
+
+        Ec2Instance agentInstance = new Ec2Instance("id", new Date(), new HashMap<>(), new JobIdentifier());
         when(agentInstances.find(agentId)).thenReturn(agentInstance);
-        when(agentInstances.getAgentStatusReport(pluginSettings, agentInstance)).thenReturn(agentStatusReport);
+        when(agentInstances.getAgentStatusReport(clusterProfile, agentInstance)).thenReturn(agentStatusReport);
         when(viewBuilder.getTemplate("agent-status-report.template.ftlh")).thenReturn(template);
         when(viewBuilder.build(template, agentStatusReport)).thenReturn("agentStatusReportView");
 
@@ -113,12 +132,12 @@ public class AgentStatusReportExecutorTest extends BaseTest {
         mockInstance();
 
         JobIdentifier jobIdentifier = new JobIdentifier("up42", 2L, "label", "stage1", "1", "job", 1L);
-        AgentStatusReportRequest agentStatusReportRequest = new AgentStatusReportRequest(null, jobIdentifier);
+        AgentStatusReportRequest agentStatusReportRequest = new AgentStatusReportRequest(null, jobIdentifier, clusterProfile);
         AgentStatusReport agentStatusReport = new AgentStatusReport(jobIdentifier, instance, null);
-        when(pluginRequest.getPluginSettings()).thenReturn(pluginSettings);
-        Ec2Instance instance = new Ec2Instance("id", new Date(), new HashMap<>(), null, new JobIdentifier());
+
+        Ec2Instance instance = new Ec2Instance("id", new Date(), new HashMap<>(), new JobIdentifier());
         when(agentInstances.find(jobIdentifier)).thenReturn(instance);
-        when(agentInstances.getAgentStatusReport(pluginSettings, instance)).thenReturn(agentStatusReport);
+        when(agentInstances.getAgentStatusReport(clusterProfile, instance)).thenReturn(agentStatusReport);
         when(viewBuilder.getTemplate("agent-status-report.template.ftlh")).thenReturn(template);
         when(viewBuilder.build(template, agentStatusReport)).thenReturn("agentStatusReportView");
 
@@ -135,7 +154,7 @@ public class AgentStatusReportExecutorTest extends BaseTest {
     public void shouldRenderContainerNotFoundAgentStatusReportViewWhenNoContainerIsRunningForProvidedJobIdentifier() throws Exception {
         JobIdentifier jobIdentifier = new JobIdentifier("up42", 2L, "label", "stage1", "1", "job", 1L);
 
-        AgentStatusReportRequest agentStatusReportRequest = new AgentStatusReportRequest(null, jobIdentifier);
+        AgentStatusReportRequest agentStatusReportRequest = new AgentStatusReportRequest(null, jobIdentifier, clusterProfile);
 
         when(agentInstances.find(jobIdentifier)).thenReturn(null);
         when(viewBuilder.getTemplate("not-running-agent-status-report.template.ftlh")).thenReturn(template);
@@ -153,7 +172,7 @@ public class AgentStatusReportExecutorTest extends BaseTest {
     @Test
     public void shouldRenderContainerNotFoundAgentStatusReportViewWhenNoContainerIsRunningForProvidedElasticAgentId() throws Exception {
         String elasticAgentId = "elastic-agent-id";
-        AgentStatusReportRequest agentStatusReportRequest = new AgentStatusReportRequest(elasticAgentId, null);
+        AgentStatusReportRequest agentStatusReportRequest = new AgentStatusReportRequest(elasticAgentId, null, clusterProfile);
 
         when(agentInstances.find(elasticAgentId)).thenReturn(null);
         when(viewBuilder.getTemplate("not-running-agent-status-report.template.ftlh")).thenReturn(template);

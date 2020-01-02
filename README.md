@@ -1,7 +1,7 @@
 # GoCD Elastic agent plugin for AWS EC2
 
 [GoCD](https://www.gocd.org) server plugin for bringing up Amazon EC2 instances as its agents on demand.  
-Compatible with [version 4.0](https://plugin-api.gocd.org/18.10.0/elastic-agents/) of the elastic agent endpoint (GoCD server versions between 18.10.0 and 19.2.0).
+Compatible with [version 5.0](https://plugin-api.gocd.org/19.3.0/elastic-agents/) of the elastic agent endpoint (GoCD server versions starting from 19.3.0).
 
 Table of Contents
 =================
@@ -21,14 +21,14 @@ and restart the server.
 
 Prepare [AMI](#amazon-machine-image), [security groups](#security-groups) and [subnets](#subnets) for the agents.
 
-Tested on GoCD server versions 18.12.0 and 19.2.0.
+Tested on GoCD server versions 19.11.0 and 19.12.0.
 
 ### Amazon Machine Image
 
 This is the most important step, where you will prepare a base image for the agents. 
 Create new clean EC2 instance and install there all the tools and configurations that your agents may need. 
 After that, follow up [the official guide](https://docs.gocd.org/current/installation/install/agent/linux.html) to install Go-Agent. Do not connect it to the 
-server yet, nor enable auto startup of go-agent.service! All this will be done by the plugin itself with help from user data scripts.
+server yet, nor enable auto startup of go-agent.service! All this will be done by the plugin itself with the help of the user data scripts.
 Before stopping this instance perform cleanup with the following commands:
 ```bash
 rm -rf /var/lib/cloud/*

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 ThoughtWorks, Inc.
+ * Copyright 2016 ThoughtWorks, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,43 +18,39 @@
 
 package com.continuumsecurity.elasticagent.ec2.executors;
 
+import com.continuumsecurity.elasticagent.ec2.utils.Util;
 import com.google.gson.Gson;
-
+import com.google.gson.reflect.TypeToken;
 import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
-
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
+import java.lang.reflect.Type;
 import java.util.Map;
 
-import com.continuumsecurity.elasticagent.ec2.utils.Util;
-
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 
-public class GetViewRequestExecutorTest {
+public class GetClusterProfileViewRequestExecutorTest {
 
     @Test
     public void shouldRenderTheTemplateInJSON() throws Exception {
-        GoPluginApiResponse response = new GetViewRequestExecutor().execute();
+        GoPluginApiResponse response = new GetClusterProfileViewRequestExecutor().execute();
         assertThat(response.responseCode(), is(200));
-        Map<String, String> hashSet = new Gson().fromJson(response.responseBody(), HashMap.class);
-        assertThat(hashSet, hasEntry("template", Util.readResource("/plugin-settings.template.html")));
+        final Type type = new TypeToken<Map<String, String>>() {
+        }.getType();
+        Map<String, String> hashSet = new Gson().fromJson(response.responseBody(), type);
+        assertThat(hashSet, hasEntry("template", Util.readResource("/cluster-profile.template.html")));
     }
 
     @Test
     public void allFieldsShouldBePresentInView() throws Exception {
-        String template = Util.readResource("/plugin-settings.template.html");
+        String template = Util.readResource("/cluster-profile.template.html");
 
-        for (Map.Entry<String, Field> fieldEntry : GetPluginConfigurationExecutor.FIELDS.entrySet()) {
-            assertThat(template, containsString("ng-model=\"" + fieldEntry.getKey() + "\""));
-            assertThat(template, containsString("<span class=\"form_error\" ng-show=\"GOINPUTNAME[" + fieldEntry.getKey() +
-                    "].$error.server\">\n" +
-                    "            {{GOINPUTNAME[" + fieldEntry.getKey() +
+        for (Metadata field : GetClusterProfileMetadataExecutor.CLUSTER_PROFILE_FIELDS) {
+            assertThat(template, containsString("ng-model=\"" + field.getKey() + "\""));
+            assertThat(template, containsString("<span class=\"form_error\" ng-show=\"GOINPUTNAME[" + field.getKey() +
+                    "].$error.server\">{{GOINPUTNAME[" + field.getKey() +
                     "].$error.server}}</span>"));
         }
     }
-
 }

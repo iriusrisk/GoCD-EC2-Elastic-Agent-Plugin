@@ -12,42 +12,26 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * This file incorporates changes by @continuumsecurity
  */
 
 package com.continuumsecurity.elasticagent.ec2.executors;
 
-import org.apache.commons.lang3.StringUtils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
-import com.continuumsecurity.elasticagent.ec2.utils.Size;
+public class NumberMetadata extends Metadata {
 
-public class MemoryMetadata extends Metadata {
-
-    public MemoryMetadata(String key, boolean required) {
+    public NumberMetadata(String key, boolean required) {
         super(key, required, false);
     }
 
     @Override
     protected String doValidate(String input) {
-        List<String> errors = new ArrayList<>(Arrays.asList(super.doValidate(input)));
-
-        try {
-            Size.parse(input);
-        } catch (Exception e) {
-            errors.add(e.getMessage());
+        if (isRequired() || !isBlank(input)) {
+            if (isBlank(input) || Integer.parseInt(input) < 0) {
+                return this.getKey() + " must be a positive integer.";
+            }
         }
-
-        errors.removeAll(Collections.singleton(null));
-
-        if (errors.isEmpty()) {
-            return null;
-        }
-        return StringUtils.join(errors, ". ");
+        return null;
     }
 }

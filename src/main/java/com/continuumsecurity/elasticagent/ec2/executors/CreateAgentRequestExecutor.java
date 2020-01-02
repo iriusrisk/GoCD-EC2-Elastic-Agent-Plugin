@@ -18,20 +18,25 @@
 
 package com.continuumsecurity.elasticagent.ec2.executors;
 
+import com.continuumsecurity.elasticagent.ec2.AgentInstances;
+import com.continuumsecurity.elasticagent.ec2.ConsoleLogAppender;
+import com.continuumsecurity.elasticagent.ec2.PluginRequest;
+import com.continuumsecurity.elasticagent.ec2.RequestExecutor;
 import com.continuumsecurity.elasticagent.ec2.requests.CreateAgentRequest;
 import com.thoughtworks.go.plugin.api.response.DefaultGoPluginApiResponse;
 import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
-
-import com.continuumsecurity.elasticagent.ec2.AgentInstance;
-import com.continuumsecurity.elasticagent.ec2.PluginRequest;
-import com.continuumsecurity.elasticagent.ec2.RequestExecutor;
+import org.joda.time.DateTime;
+import org.joda.time.LocalTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
 public class CreateAgentRequestExecutor implements RequestExecutor {
-    private final AgentInstance agentInstances;
+    private static final DateTimeFormatter MESSAGE_PREFIX_FORMATTER = DateTimeFormat.forPattern("'##|'HH:mm:ss.SSS '[go]'");
+    private final AgentInstances agentInstances;
     private final PluginRequest pluginRequest;
     private final CreateAgentRequest request;
 
-    public CreateAgentRequestExecutor(CreateAgentRequest request, AgentInstance agentInstances, PluginRequest pluginRequest) {
+    public CreateAgentRequestExecutor(CreateAgentRequest request, AgentInstances agentInstances, PluginRequest pluginRequest) {
         this.request = request;
         this.agentInstances = agentInstances;
         this.pluginRequest = pluginRequest;
@@ -39,7 +44,20 @@ public class CreateAgentRequestExecutor implements RequestExecutor {
 
     @Override
     public GoPluginApiResponse execute() throws Exception {
-        agentInstances.create(request, pluginRequest.getPluginSettings());
+        ConsoleLogAppender consoleLogAppender = text -> {
+            final String message = String.format("%s %s\n", LocalTime.now().toString(MESSAGE_PREFIX_FORMATTER), text);
+            pluginRequest.appendToConsoleLog(request.jobIdentifier(), message);
+        };
+
+        consoleLogAppender.accept(String.format("Received request to create an instance for %s at %s", request.jobIdentifier().getRepresentation(), new DateTime().toString("yyyy-MM-dd HH:mm:ss ZZ")));
+
+        try {
+            agentInstances.create(request, pluginRequest, consoleLogAppender);
+        } catch (Exception e) {
+            consoleLogAppender.accept(String.format("Failed while creating instance: %s", e.getMessage()));
+            throw e;
+        }
+
         return new DefaultGoPluginApiResponse(200);
     }
 

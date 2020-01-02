@@ -19,38 +19,41 @@
 package com.continuumsecurity.elasticagent.ec2.requests;
 
 import com.continuumsecurity.elasticagent.ec2.Agent;
-
+import com.continuumsecurity.elasticagent.ec2.models.JobIdentifierMother;
+import com.google.gson.JsonObject;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
-import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 
 public class ShouldAssignWorkRequestTest {
 
     @Test
     public void shouldDeserializeFromJSON() throws Exception {
-        String json = "{\n" +
-                "  \"environment\": \"prod\",\n" +
-                "  \"agent\": {\n" +
-                "    \"agent_id\": \"42\",\n" +
-                "    \"agent_state\": \"Idle\",\n" +
-                "    \"build_state\": \"Idle\",\n" +
-                "    \"config_state\": \"Enabled\"\n" +
-                "  },\n" +
-                "  \"properties\": {\n" +
-                "    \"property_name\": \"property_value\"\n" +
-                "  }\n" +
-                "}";
+        JsonObject agentJson = new JsonObject();
+        agentJson.addProperty("agent_id", "42");
+        agentJson.addProperty("agent_state", "Idle");
+        agentJson.addProperty("build_state", "Idle");
+        agentJson.addProperty("config_state", "Enabled");
 
-        ShouldAssignWorkRequest request = ShouldAssignWorkRequest.fromJSON(json);
-        assertThat(request.environment(), equalTo("prod"));
+        JsonObject propertiesJson = new JsonObject();
+        propertiesJson.addProperty("property_name", "property_value");
+
+        JsonObject json = new JsonObject();
+        json.add("agent", agentJson);
+        json.add("job_identifier", JobIdentifierMother.getJson());
+        json.add("elastic_agent_profile_properties", propertiesJson);
+
+        ShouldAssignWorkRequest request = ShouldAssignWorkRequest.fromJSON(json.toString());
+
         assertThat(request.agent(), equalTo(new Agent("42", Agent.AgentState.Idle, Agent.BuildState.Idle, Agent.ConfigState.Enabled)));
         HashMap<String, String> expectedProperties = new HashMap<>();
         expectedProperties.put("property_name", "property_value");
-        assertThat(request.properties(), Matchers.<Map<String, String>>equalTo(expectedProperties));
+        assertThat(request.profileProperties(), Matchers.equalTo(expectedProperties));
+        assertThat(request.jobIdentifier(), is(JobIdentifierMother.get()));
     }
 }

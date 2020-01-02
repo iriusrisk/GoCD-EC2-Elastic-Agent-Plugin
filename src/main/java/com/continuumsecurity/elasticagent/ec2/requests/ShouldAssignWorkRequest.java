@@ -18,19 +18,14 @@
 
 package com.continuumsecurity.elasticagent.ec2.requests;
 
+import com.continuumsecurity.elasticagent.ec2.*;
+import com.continuumsecurity.elasticagent.ec2.executors.ShouldAssignWorkRequestExecutor;
+import com.continuumsecurity.elasticagent.ec2.models.JobIdentifier;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import java.util.Map;
-
-import com.continuumsecurity.elasticagent.ec2.Agent;
-import com.continuumsecurity.elasticagent.ec2.AgentInstance;
-import com.continuumsecurity.elasticagent.ec2.Ec2Instance;
-import com.continuumsecurity.elasticagent.ec2.Request;
-import com.continuumsecurity.elasticagent.ec2.RequestExecutor;
-import com.continuumsecurity.elasticagent.ec2.executors.ShouldAssignWorkRequestExecutor;
-import com.continuumsecurity.elasticagent.ec2.models.JobIdentifier;
 
 /**
  * Represents the {@link Request#REQUEST_SHOULD_ASSIGN_WORK} message.
@@ -38,15 +33,18 @@ import com.continuumsecurity.elasticagent.ec2.models.JobIdentifier;
 public class ShouldAssignWorkRequest {
     public static final Gson GSON = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
     private Agent agent;
-    private String environment;
     private JobIdentifier jobIdentifier;
-    private Map<String, String> properties;
+    private Map<String, String> elasticAgentProfileProperties;
+    private ClusterProfileProperties clusterProfileProperties;
 
-    public ShouldAssignWorkRequest(Agent agent, String environment, JobIdentifier jobIdentifier, Map<String, String> properties) {
+    public ShouldAssignWorkRequest(Agent agent,
+                                   JobIdentifier jobIdentifier,
+                                   Map<String, String> elasticAgentProfileProperties,
+                                   ClusterProfileProperties clusterProfileProperties) {
         this.agent = agent;
-        this.environment = environment;
         this.jobIdentifier = jobIdentifier;
-        this.properties = properties;
+        this.elasticAgentProfileProperties = elasticAgentProfileProperties;
+        this.clusterProfileProperties = clusterProfileProperties;
     }
 
     public ShouldAssignWorkRequest() {
@@ -56,23 +54,23 @@ public class ShouldAssignWorkRequest {
         return agent;
     }
 
-    public String environment() {
-        return environment;
-    }
-
     public JobIdentifier jobIdentifier() {
         return jobIdentifier;
     }
 
-    public Map<String, String> properties() {
-        return properties;
+    public Map<String, String> profileProperties() {
+        return elasticAgentProfileProperties;
+    }
+
+    public ClusterProfileProperties getClusterProfileProperties() {
+        return clusterProfileProperties;
     }
 
     public static ShouldAssignWorkRequest fromJSON(String json) {
         return GSON.fromJson(json, ShouldAssignWorkRequest.class);
     }
 
-    public RequestExecutor executor(AgentInstance<Ec2Instance> agentInstances) {
+    public RequestExecutor executor(AgentInstances<Ec2Instance> agentInstances) {
         return new ShouldAssignWorkRequestExecutor(this, agentInstances);
     }
 }
