@@ -77,12 +77,12 @@ public class Ec2Instance {
                 "echo \"agent.auto.register.elasticAgent.pluginId=" + Constants.PLUGIN_ID + "\" >> /var/lib/go-agent/config/autoregister.properties\n" +
                 "chown -R go:go /var/log/go-agent/\n" +
                 "chown -R go:go /var/lib/go-agent/\n" +
-                "chown -R go:go /usr/share/go-agent/\n" +
-                "systemctl start go-agent.service\n";
+                "chown -R go:go /usr/share/go-agent/\n";
 
         if (request.properties().get("ec2_user_data") != null) {
             userdata += request.properties().get("ec2_user_data") + "\n";
         }
+        userdata += "systemctl start go-agent.service\n";
 
         List<String> securityGroups = Arrays.asList(request.properties().get("ec2_sg").split("\\s*,\\s*"));
         List<String> subnets = Arrays.asList(request.properties().get("ec2_subnets").split("\\s*,\\s*"));
