@@ -21,12 +21,13 @@ and restart the server.
 
 Prepare [AMI](#amazon-machine-image), [security groups](#security-groups) and [subnets](#subnets) for the agents.
 
-Tested on GoCD server versions 19.11.0 and 19.12.0.
+Tested on GoCD server & agent versions 20.4.0.
 
 ### Amazon Machine Image
 
 This is the most important step, where you will prepare a base image for the agents. 
-Create new clean EC2 instance and install there all the tools and configurations that your agents may need. 
+Create new clean EC2 instance and install there all the tools and configurations that your agents may need. This plugin in intended to be used with Amazon Linux 2 
+based agents, but you can also adapt it to run with other operating systems like [Ubuntu](https://github.com/continuumsecurity/GoCD-EC2-Elastic-Agent-Plugin/issues/8#issuecomment-619739056).  
 After that, follow up [the official guide](https://docs.gocd.org/current/installation/install/agent/linux.html) to install Go-Agent. Do not connect it to the 
 server yet, nor enable auto startup of go-agent.service! All this will be done by the plugin itself with the help of the user data scripts.
 Before stopping this instance perform cleanup with the following commands:
@@ -51,7 +52,7 @@ created EC2 instance.
 
 ### Subnets
 
-To be able to launch new agents you need to have at least one subnet in your VPC where you will put your newly created instances. You can define several
+To be able to launch new agents you need to have at least 2 subnets in your VPC where you will put your newly created instances. You can define even more
 subnets (ideally in different availability zones) in the elastic agent profile and the plugin will choose randomly one of them each time it has to create new
 instance. If the chosen availability zone has run out of your requested instance type, the plugin will try to bring up instance in the next subnet.
 
