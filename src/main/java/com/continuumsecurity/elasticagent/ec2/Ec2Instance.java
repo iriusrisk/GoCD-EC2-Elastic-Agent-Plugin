@@ -70,6 +70,8 @@ public class Ec2Instance {
 
         String userdata = "#!/bin/bash\n" +
                 "sed -ri \"s,http[s]?://localhost:[0-9]+/go," + settings.getGoServerUrl() + ",g\" /usr/share/go-agent/wrapper-config/wrapper-properties.conf\n" +
+                "echo \"wrapper.app.parameter.102=-sslVerificationMode\" >> /usr/share/go-agent/wrapper-config/wrapper-properties.conf\n" +
+                "echo \"wrapper.app.parameter.103=NONE\" >> /usr/share/go-agent/wrapper-config/wrapper-properties.conf\n" +
                 "mkdir -p /var/lib/go-agent/config\n" +
                 "echo \"agent.auto.register.key=" + request.autoRegisterKey() + "\" > /var/lib/go-agent/config/autoregister.properties\n" +
                 "echo \"agent.auto.register.hostname=EA_$(ec2-metadata --instance-id | cut -d \" \" -f 2)\" >> /var/lib/go-agent/config/autoregister.properties\n" +
