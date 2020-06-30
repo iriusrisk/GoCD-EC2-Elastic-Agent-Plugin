@@ -171,6 +171,10 @@ public class Ec2Instance {
                         .tagSpecifications(tagSpecification)
                         .build();
 
+                if (request.properties().get("ec2_instance_profile") != null) {
+                    runInstancesRequest.setIamInstanceProfile(IamInstanceProfileSpecification.builder().arn(request.properties().get("ec2_instance_profile")).build());
+                }
+
                 response = ec2.runInstances(runInstancesRequest);
                 result = true;
 
