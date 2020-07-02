@@ -21,8 +21,7 @@ package com.continuumsecurity.elasticagent.ec2;
 import com.continuumsecurity.elasticagent.ec2.models.JobIdentifier;
 import com.continuumsecurity.elasticagent.ec2.requests.CreateAgentRequest;
 import org.joda.time.DateTime;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.*;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.regions.Region;
@@ -221,12 +220,20 @@ public class Ec2Instance {
         }
     }
 
-    private static Ec2Client createEc2Client(String awsAccessKeyId, String awsSecretAccessKey, Region region) {
-        AwsBasicCredentials awsCredentials = AwsBasicCredentials.create(awsAccessKeyId, awsSecretAccessKey);
-
+    
+    private static AwsCredentialsProvider getCredentialsProvider(String awsAccessKeyId, String awsSecretAccessKey) {
+        if (awsAccessKeyId != null && awsSecretAccessKey != null) {
+            AwsBasicCredentials awsCredentials = AwsBasicCredentials.create(awsAccessKeyId,awsSecretAccessKey);
+            return StaticCredentialsProvider.create(awsCredentials);
+        }
+        else {
+            return DefaultCredentialsProvider.create();
+        }
+    }
+    protected static Ec2Client createEc2Client(String awsAccessKeyId, String awsSecretAccessKey, Region region) {
         return Ec2Client.builder()
                 .region(region)
-                .credentialsProvider(StaticCredentialsProvider.create(awsCredentials))
+                .credentialsProvider(getCredentialsProvider(awsAccessKeyId,awsSecretAccessKey))
                 .build();
     }
 

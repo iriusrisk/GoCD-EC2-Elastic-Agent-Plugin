@@ -32,8 +32,8 @@ public class GetClusterProfileMetadataExecutor implements RequestExecutor {
     public static final Metadata GO_SERVER_URL = new GoServerURLMetadata();
     public static final Metadata AUTO_REGISTER_TIMEOUT = new NumberMetadata("auto_register_timeout", true);
     public static final Metadata MAX_ELASTIC_AGENTS = new NumberMetadata("max_elastic_agents", true);
-    public static final Metadata AWS_ACCESS_KEY_ID = new Metadata("aws_access_key_id", true, false);
-    public static final Metadata AWS_SECRET_ACCESS_KEY = new Metadata("aws_secret_access_key", true, true);
+    public static final Metadata AWS_ACCESS_KEY_ID = new Metadata("aws_access_key_id", false, false);
+    public static final Metadata AWS_SECRET_ACCESS_KEY = new Metadata("aws_secret_access_key", false, true);
     public static final Metadata AWS_REGION = new Metadata("aws_region", true, false);
 
     public static final List<Metadata> CLUSTER_PROFILE_FIELDS = new ArrayList<>();

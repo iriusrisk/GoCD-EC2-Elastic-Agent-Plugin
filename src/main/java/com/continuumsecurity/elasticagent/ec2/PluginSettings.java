@@ -96,15 +96,17 @@ public class PluginSettings {
 
     @Override
     public String toString() {
-        return "PluginSettings{" +
+        String pluginSettingsString = "PluginSettings{" +
                 "goServerUrl='" + goServerUrl + '\'' +
                 ", autoRegisterTimeout='" + autoRegisterTimeout + '\'' +
-                ", maxElasticAgents='" + maxElasticAgents + '\'' +
-                ", awsAccessKeyId='" + awsAccessKeyId + '\'' +
-                ", awsSecretAccessKey='" + awsSecretAccessKey + '\'' +
-                ", awsRegion='" + awsRegion + '\'' +
+                ", maxElasticAgents='" + maxElasticAgents + '\'';
+        if (awsAccessKeyId != null) pluginSettingsString += ", awsAccessKeyId='" + awsAccessKeyId + '\'';
+        if (awsSecretAccessKey != null) pluginSettingsString += ", awsSecretAccessKey='" + awsSecretAccessKey + '\'';
+        pluginSettingsString += ", awsRegion='" + awsRegion + '\'' +
                 ", autoRegisterPeriod=" + autoRegisterPeriod +
                 '}';
+        
+        return pluginSettingsString;
     }
 
     public Period getAutoRegisterPeriod() {
