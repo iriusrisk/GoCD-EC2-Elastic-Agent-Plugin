@@ -8,6 +8,7 @@ Table of Contents
 
   * [Installation](#installation)
     * [Amazon Machine Image](#amazon-machine-image)
+    * [IAM Instance Profile](#iam-instance-profile)
     * [Security Groups](#security-groups)
     * [Subnets](#subnets)
   * [Building the code base](#building-the-code-base)
@@ -41,6 +42,13 @@ rm -rf /var/lib/go-agent/config/*
 ```
 Finally, create new [Amazon Machine Image](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AMIs.html) from your instance. Each Elastic Agent Profile can use
 different AMI to suit your needs.
+
+### IAM Instance Profile
+
+AWS allows you to create an [IAM Instance Profile](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_switch-role-ec2_instance-profiles.html) which
+assigns an AWS IAM role to the EC2 instance(s), which can be used to authorize the instances to invoke the AWS API. Provide the IAM Instance profile name
+(not the Role name, or the ARN) to launch instances with the corresponding role associated with them. There is no validation of the IAM Instance Profile
+and providing an invalid profile name will result in instances not being deployed.
 
 ### Security Groups
 
