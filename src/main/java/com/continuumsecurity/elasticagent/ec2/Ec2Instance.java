@@ -219,10 +219,13 @@ public class Ec2Instance {
             ec2.close();
         }
     }
-
+    
+    private static boolean isNotNullOrBlank(String testString) {
+    	return testString!=null && !testString.isBlank();
+    }
     
     private static AwsCredentialsProvider getCredentialsProvider(String awsAccessKeyId, String awsSecretAccessKey) {
-        if (awsAccessKeyId != null && awsSecretAccessKey != null) {
+        if (isNotNullOrBlank(awsAccessKeyId) && isNotNullOrBlank(awsSecretAccessKey)) {
             AwsBasicCredentials awsCredentials = AwsBasicCredentials.create(awsAccessKeyId,awsSecretAccessKey);
             return StaticCredentialsProvider.create(awsCredentials);
         }

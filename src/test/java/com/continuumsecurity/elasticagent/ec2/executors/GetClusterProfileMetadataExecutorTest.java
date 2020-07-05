@@ -63,11 +63,11 @@ public class GetClusterProfileMetadataExecutorTest {
                 "}," +
                 "{" +
                 "\"key\":\"aws_access_key_id\"," +
-                "\"metadata\":{\"required\":true,\"secure\":false}" +
+                "\"metadata\":{\"required\":false,\"secure\":false}" +
                 "}," +
                 "{" +
                 "\"key\":\"aws_secret_access_key\"," +
-                "\"metadata\":{\"required\":true,\"secure\":true}" +
+                "\"metadata\":{\"required\":false,\"secure\":true}" +
                 "}," +
                 "{" +
                 "\"key\":\"aws_region\"," +

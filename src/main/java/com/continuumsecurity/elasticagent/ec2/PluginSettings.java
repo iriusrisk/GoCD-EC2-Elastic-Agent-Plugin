@@ -100,8 +100,8 @@ public class PluginSettings {
                 "goServerUrl='" + goServerUrl + '\'' +
                 ", autoRegisterTimeout='" + autoRegisterTimeout + '\'' +
                 ", maxElasticAgents='" + maxElasticAgents + '\'';
-        if (awsAccessKeyId != null) pluginSettingsString += ", awsAccessKeyId='" + awsAccessKeyId + '\'';
-        if (awsSecretAccessKey != null) pluginSettingsString += ", awsSecretAccessKey='" + awsSecretAccessKey + '\'';
+        if (awsAccessKeyId != null && !awsAccessKeyId.isBlank()) pluginSettingsString += ", awsAccessKeyId='" + awsAccessKeyId + '\'';
+        if (awsSecretAccessKey != null && !awsSecretAccessKey.isBlank()) pluginSettingsString += ", awsSecretAccessKey='" + awsSecretAccessKey + '\'';
         pluginSettingsString += ", awsRegion='" + awsRegion + '\'' +
                 ", autoRegisterPeriod=" + autoRegisterPeriod +
                 '}';

@@ -34,8 +34,6 @@ public class ClusterProfileValidateRequestExecutorTest {
                 "{\"message\":\"Go Server URL must not be blank.\",\"key\":\"go_server_url\"}," +
                 "{\"message\":\"auto_register_timeout must be a positive integer.\",\"key\":\"auto_register_timeout\"}," +
                 "{\"message\":\"max_elastic_agents must be a positive integer.\",\"key\":\"max_elastic_agents\"}," +
-                "{\"message\":\"aws_access_key_id must not be blank.\",\"key\":\"aws_access_key_id\"}," +
-                "{\"message\":\"aws_secret_access_key must not be blank.\",\"key\":\"aws_secret_access_key\"}," +
                 "{\"message\":\"aws_region must not be blank.\",\"key\":\"aws_region\"}," +
                 "{\"key\":\"foo\",\"message\":\"Is an unknown property\"}" +
                 "]";
@@ -51,8 +49,6 @@ public class ClusterProfileValidateRequestExecutorTest {
                 "{\"message\":\"Go Server URL must not be blank.\",\"key\":\"go_server_url\"}," +
                 "{\"message\":\"auto_register_timeout must be a positive integer.\",\"key\":\"auto_register_timeout\"}," +
                 "{\"message\":\"max_elastic_agents must be a positive integer.\",\"key\":\"max_elastic_agents\"}," +
-                "{\"message\":\"aws_access_key_id must not be blank.\",\"key\":\"aws_access_key_id\"}," +
-                "{\"message\":\"aws_secret_access_key must not be blank.\",\"key\":\"aws_secret_access_key\"}," +
                 "{\"message\":\"aws_region must not be blank.\",\"key\":\"aws_region\"}" +
                 "]\n";
 
