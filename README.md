@@ -11,6 +11,7 @@ Table of Contents
     * [IAM Instance Profile](#iam-instance-profile)
     * [Security Groups](#security-groups)
     * [Subnets](#subnets)
+    * [AWS Authentication](#aws-authentication)                            
   * [Building the code base](#building-the-code-base)
   * [Credits](#credits)
   * [Disclaimer](#disclaimer)
@@ -65,6 +66,12 @@ subnets (ideally in different availability zones) in the elastic agent profile a
 instance. If the chosen availability zone has run out of your requested instance type, the plugin will try to bring up instance in the next subnet.
 
 Also, remember to enable auto-assign public IP address to the subnets.
+
+### AWS Authentication
+
+If an AWS Access Key ID and AWS Secret Access Key is provided for a cluster profile, then those credentials will be used. Otherwise, if left blank,
+the [Default Provider Credential Chain](https://docs.aws.amazon.com/sdk-for-java/v2/developer-guide/credentials.html) will be used. i.e. The default provider
+credentials will be resolved from the GoCD server environment (e.g. ~/.credentials file or Ec2 IAM Instance profiles from instance metadata).
 
 ## Building the code base
 

@@ -59,16 +59,16 @@ Ensure that the keys you use are also declared in the GetPluginConfigurationExec
     </fieldset>
 
     <fieldset>
-        <legend>AWS account configuration</legend>
+        <legend>AWS account configuration (Setting Key ID / Secret here will override default provider chain)</legend>
         <div class="form_item_block">
-            <label>AWS access key ID:<span class='asterix'>*</span></label>
-            <input type="text" ng-model="aws_access_key_id" ng-required="true"/>
+            <label>AWS access key ID:</label>
+            <input type="text" ng-model="aws_access_key_id" ng-required="false"/>
             <span class="form_error" ng-show="GOINPUTNAME[aws_access_key_id].$error.server">{{GOINPUTNAME[aws_access_key_id].$error.server}}</span>
         </div>
 
         <div class="form_item_block">
-            <label>AWS secret access key:<span class='asterix'>*</span></label>
-            <input type="password" ng-model="aws_secret_access_key" ng-required="true"/>
+            <label>AWS secret access key:</label>
+            <input type="password" ng-model="aws_secret_access_key" ng-required="false"/>
             <span class="form_error" ng-show="GOINPUTNAME[aws_secret_access_key].$error.server">{{GOINPUTNAME[aws_secret_access_key].$error.server}}</span>
         </div>
 

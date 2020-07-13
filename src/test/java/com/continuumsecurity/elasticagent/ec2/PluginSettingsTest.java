@@ -22,6 +22,9 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.not;
 
 public class PluginSettingsTest {
     @Test
@@ -35,5 +38,28 @@ public class PluginSettingsTest {
         assertThat(pluginSettings.getGoServerUrl(), is("https://example.com/go"));
         assertThat(pluginSettings.getAwsAccessKeyId(), is("123456"));
         assertThat(pluginSettings.getAwsSecretAccessKey(), is("7890"));
+    }
+    
+    @Test
+    public void shouldDeserializeFromJSONWithNullCredentials() throws Exception {
+        PluginSettings pluginSettings = PluginSettings.fromJSON("{" +
+                "\"go_server_url\": \"https://example.com/go\"" +
+                "}");
+        
+        assertThat(pluginSettings.getGoServerUrl(), is("https://example.com/go"));
+        assertThat(pluginSettings.getAwsAccessKeyId(), is(nullValue()));
+        assertThat(pluginSettings.getAwsSecretAccessKey(), is(nullValue()));
+    }
+    
+    @Test
+    public void shouldSerializeProvidedCredentialsOnly() throws Exception {
+      PluginSettings pluginSettings = PluginSettings.fromJSON("{" +
+                "\"go_server_url\": \"https://example.com/go\", " +
+                "\"aws_access_key_id\": \"123456\"" +
+                "}");
+
+        assertThat(pluginSettings.toString(), containsString("awsAccessKeyId"));
+        assertThat(pluginSettings.toString(), containsString("123456"));
+        assertThat(pluginSettings.toString(), not(containsString("awsSecretAccessKey")));
     }
 }

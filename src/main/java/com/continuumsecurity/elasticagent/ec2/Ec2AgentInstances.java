@@ -25,8 +25,6 @@ import com.continuumsecurity.elasticagent.ec2.models.StatusReport;
 import com.continuumsecurity.elasticagent.ec2.requests.CreateAgentRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.Period;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ec2.model.*;
 
@@ -158,15 +156,12 @@ public class Ec2AgentInstances implements AgentInstances<Ec2Instance> {
     @Override
     public void refreshAll(ClusterProfileProperties clusterProfileProperties) throws Exception {
         if (!refreshed) {
-            AwsBasicCredentials awsCredentials = AwsBasicCredentials.create(
-                    clusterProfileProperties.getAwsAccessKeyId(),
-                    clusterProfileProperties.getAwsSecretAccessKey()
-            );
-
-            Ec2Client ec2 = Ec2Client.builder()
-                    .region(clusterProfileProperties.getAwsRegion())
-                    .credentialsProvider(StaticCredentialsProvider.create(awsCredentials))
-                    .build();
+    
+            Ec2Client ec2 = Ec2Instance.createEc2Client(
+                               clusterProfileProperties.getAwsAccessKeyId(),
+                               clusterProfileProperties.getAwsSecretAccessKey(),
+                               clusterProfileProperties.getAwsRegion()
+                            );
 
             DescribeInstancesResponse response = ec2.describeInstances(
                     DescribeInstancesRequest.builder()
@@ -220,15 +215,11 @@ public class Ec2AgentInstances implements AgentInstances<Ec2Instance> {
 
     @Override
     public StatusReport getStatusReport(ClusterProfileProperties clusterProfileProperties) throws Exception {
-        AwsBasicCredentials awsCredentials = AwsBasicCredentials.create(
-                clusterProfileProperties.getAwsAccessKeyId(),
-                clusterProfileProperties.getAwsSecretAccessKey()
-        );
-
-        Ec2Client ec2 = Ec2Client.builder()
-                .region(clusterProfileProperties.getAwsRegion())
-                .credentialsProvider(StaticCredentialsProvider.create(awsCredentials))
-                .build();
+            Ec2Client ec2 = Ec2Instance.createEc2Client(
+                               clusterProfileProperties.getAwsAccessKeyId(),
+                               clusterProfileProperties.getAwsSecretAccessKey(),
+                               clusterProfileProperties.getAwsRegion()
+                            );
 
         DescribeInstancesResponse response = ec2.describeInstances(
                 DescribeInstancesRequest.builder()
@@ -277,15 +268,12 @@ public class Ec2AgentInstances implements AgentInstances<Ec2Instance> {
 
     @Override
     public AgentStatusReport getAgentStatusReport(ClusterProfileProperties clusterProfileProperties, Ec2Instance agentInstance) {
-        AwsBasicCredentials awsCredentials = AwsBasicCredentials.create(
-                clusterProfileProperties.getAwsAccessKeyId(),
-                clusterProfileProperties.getAwsSecretAccessKey()
-        );
+            Ec2Client ec2 = Ec2Instance.createEc2Client(
+                               clusterProfileProperties.getAwsAccessKeyId(),
+                               clusterProfileProperties.getAwsSecretAccessKey(),
+                               clusterProfileProperties.getAwsRegion()
+                            );
 
-        Ec2Client ec2 = Ec2Client.builder()
-                .region(clusterProfileProperties.getAwsRegion())
-                .credentialsProvider(StaticCredentialsProvider.create(awsCredentials))
-                .build();
 
         DescribeInstancesResponse response = ec2.describeInstances(
                 DescribeInstancesRequest.builder()
