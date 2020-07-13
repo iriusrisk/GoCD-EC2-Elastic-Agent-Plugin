@@ -28,6 +28,7 @@ public class Test {
         properties.put("ec2_subnets", Properties.SUBNETS);
         properties.put("ec2_key", Properties.KEY);
         properties.put("ec2_user_data", Properties.USERDATA);
+        properties.put("ec2_instance_profile", Properties.INSTANCE_PROFILE);
 
 
         JobIdentifier jobIdentifier = new JobIdentifier(

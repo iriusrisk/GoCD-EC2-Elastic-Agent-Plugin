@@ -12,6 +12,7 @@ public interface Properties {
     String SG_IDS = "sg-IDS";
     String TYPE = "t3.nano";
     String USERDATA = "#!/bin/bash\n" + "echo hi";
+    String INSTANCE_PROFILE = "InstanceProfileName"
     String AUTO_REGISTER_TIMEOUT = "5";
     String MAX_ELASTIC_AGENTS = "50";
     String AUTO_REGISTER_KEY = "AUTO_REGISTER_KEY";
