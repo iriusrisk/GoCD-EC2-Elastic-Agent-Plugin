@@ -23,9 +23,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
-
 import org.joda.time.Period;
-
 import software.amazon.awssdk.regions.Region;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -100,8 +98,8 @@ public class PluginSettings {
                 "goServerUrl='" + goServerUrl + '\'' +
                 ", autoRegisterTimeout='" + autoRegisterTimeout + '\'' +
                 ", maxElasticAgents='" + maxElasticAgents + '\'';
-        if (awsAccessKeyId != null && !awsAccessKeyId.isBlank()) pluginSettingsString += ", awsAccessKeyId='" + awsAccessKeyId + '\'';
-        if (awsSecretAccessKey != null && !awsSecretAccessKey.isBlank()) pluginSettingsString += ", awsSecretAccessKey='" + awsSecretAccessKey + '\'';
+        if (awsAccessKeyId != null && !awsAccessKeyId.isEmpty()) pluginSettingsString += ", awsAccessKeyId='" + awsAccessKeyId + '\'';
+        if (awsSecretAccessKey != null && !awsSecretAccessKey.isEmpty()) pluginSettingsString += ", awsSecretAccessKey='" + awsSecretAccessKey + '\'';
         pluginSettingsString += ", awsRegion='" + awsRegion + '\'' +
                 ", autoRegisterPeriod=" + autoRegisterPeriod +
                 '}';

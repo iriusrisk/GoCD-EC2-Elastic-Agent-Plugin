@@ -21,7 +21,10 @@ package com.continuumsecurity.elasticagent.ec2;
 import com.continuumsecurity.elasticagent.ec2.models.JobIdentifier;
 import com.continuumsecurity.elasticagent.ec2.requests.CreateAgentRequest;
 import org.joda.time.DateTime;
-import software.amazon.awssdk.auth.credentials.*;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.regions.Region;
@@ -224,7 +227,7 @@ public class Ec2Instance {
     }
     
     private static boolean isNotNullOrBlank(String testString) {
-    	return testString!=null && !testString.isBlank();
+    	return testString != null && !testString.isEmpty();
     }
     
     private static AwsCredentialsProvider getCredentialsProvider(String awsAccessKeyId, String awsSecretAccessKey) {
