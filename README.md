@@ -51,6 +51,9 @@ assigns an AWS IAM role to the EC2 instance(s), which can be used to authorize t
 (not the Role name, or the ARN) to launch instances with the corresponding role associated with them. There is no validation of the IAM Instance Profile
 and providing an invalid profile name will result in instances not being deployed.
 
+Note: in order to be able to assign instance profiles to your agents remember to assign 
+[proper policies](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html#permission-to-pass-iam-roles) to your GoCD server.
+
 ### Security Groups
 
 You will need to setup some connectivity between your GoCD server and elastic agents. You may also want to allow any other inbound/outbound traffic to the
