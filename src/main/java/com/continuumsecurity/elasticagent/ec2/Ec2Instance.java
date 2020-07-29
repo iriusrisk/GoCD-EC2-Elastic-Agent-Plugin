@@ -93,12 +93,10 @@ public class Ec2Instance {
         // subnet is assigned randomly from all the subnets configured
         Collections.shuffle(subnets);
 
-        boolean result = false;
         int i = 0;
-
         RunInstancesResponse response = null;
         // try create instance for each AZ if error
-        while (!result && i < subnets.size()) {
+        while (response == null && i < subnets.size()) {
             try {
                 Tag tagName = Tag.builder()
                         .key("Name")
@@ -177,7 +175,6 @@ public class Ec2Instance {
                         .build();
 
                 response = ec2.runInstances(runInstancesRequest);
-                result = true;
 
                 consoleLogAppender.accept("Successfully created new instance " + response.instances().get(0).instanceId() + " in " + response.instances().get(0).subnetId());
                 LOG.info("Successfully created new instance " + response.instances().get(0).instanceId() + " in " + response.instances().get(0).subnetId());
@@ -190,7 +187,7 @@ public class Ec2Instance {
             }
         }
 
-        if (i < subnets.size() && response != null) {
+        if (response != null) {
             Instance instance = response.instances().get(0);
 
             return new Ec2Instance(instance.instanceId(), Date.from(instance.launchTime()), request.properties(), request.jobIdentifier());
