@@ -23,7 +23,7 @@ and restart the server.
 
 Prepare [AMI](#amazon-machine-image), [security groups](#security-groups) and [subnets](#subnets) for the agents.
 
-Tested on GoCD server & agent versions 20.4.0.
+Tested on GoCD server & agent versions 20.6.0.
 
 ### Amazon Machine Image
 
