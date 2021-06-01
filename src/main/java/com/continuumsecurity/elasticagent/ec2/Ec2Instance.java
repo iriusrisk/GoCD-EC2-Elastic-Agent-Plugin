@@ -76,8 +76,16 @@ public class Ec2Instance {
                 "echo \"wrapper.app.parameter.103=NONE\" >> /usr/share/go-agent/wrapper-config/wrapper-properties.conf\n" +
                 "mkdir -p /var/lib/go-agent/config\n" +
                 "echo \"agent.auto.register.key=" + request.autoRegisterKey() + "\" > /var/lib/go-agent/config/autoregister.properties\n" +
-                "echo \"agent.auto.register.hostname=EA_$(ec2-metadata --instance-id | cut -d \" \" -f 2)\" >> /var/lib/go-agent/config/autoregister.properties\n" +
-                "echo \"agent.auto.register.elasticAgent.agentId=$(ec2-metadata --instance-id | cut -d \" \" -f 2)\" >> /var/lib/go-agent/config/autoregister.properties\n" +
+		"if [[ -f /usr/bin/ec2-metadata ]]; then" +
+                "  echo \"agent.auto.register.hostname=EA_$(ec2-metadata --instance-id | cut -d \" \" -f 2)\" >> /var/lib/go-agent/config/autoregister.properties\n" +
+                "  echo \"agent.auto.register.elasticAgent.agentId=$(ec2-metadata --instance-id | cut -d \" \" -f 2)\" >> /var/lib/go-agent/config/autoregister.properties\n" +
+		"elif [[ -f /usr/bin/ec2metadata ]]; then" +
+                "  echo \"agent.auto.register.hostname=EA_$(ec2metadata --instance-id)\" >> /var/lib/go-agent/config/autoregister.properties\n" +
+                "  echo \"agent.auto.register.elasticAgent.agentId=$(ec2metadata --instance-id)\" >> /var/lib/go-agent/config/autoregister.properties\n" +
+		"else" +
+		"  echo 'Error: no ec2-metadata or ec2metadata cannot set hostname sensibly' >&2" +
+		"  exit 1" +
+		"fi" +
                 "echo \"agent.auto.register.elasticAgent.pluginId=" + Constants.PLUGIN_ID + "\" >> /var/lib/go-agent/config/autoregister.properties\n" +
                 "chown -R go:go /var/log/go-agent/\n" +
                 "chown -R go:go /var/lib/go-agent/\n" +
