@@ -76,8 +76,8 @@ public class Ec2Instance {
                 "echo \"wrapper.app.parameter.103=NONE\" >> /usr/share/go-agent/wrapper-config/wrapper-properties.conf\n" +
                 "mkdir -p /var/lib/go-agent/config\n" +
                 "echo \"agent.auto.register.key=" + request.autoRegisterKey() + "\" > /var/lib/go-agent/config/autoregister.properties\n" +
-                "echo \"agent.auto.register.hostname=EA_$(ec2-metadata --instance-id | cut -d \" \" -f 2)\" >> /var/lib/go-agent/config/autoregister.properties\n" +
-                "echo \"agent.auto.register.elasticAgent.agentId=$(ec2-metadata --instance-id | cut -d \" \" -f 2)\" >> /var/lib/go-agent/config/autoregister.properties\n" +
+                "echo \"agent.auto.register.hostname=EA_$(curl http://169.254.169.254/latest/meta-data/instance-id)\" >> /var/lib/go-agent/config/autoregister.properties\n" +
+                "echo \"agent.auto.register.elasticAgent.agentId=$(curl http://169.254.169.254/latest/meta-data/instance-id)\" >> /var/lib/go-agent/config/autoregister.properties\n" +
                 "echo \"agent.auto.register.elasticAgent.pluginId=" + Constants.PLUGIN_ID + "\" >> /var/lib/go-agent/config/autoregister.properties\n" +
                 "chown -R go:go /var/log/go-agent/\n" +
                 "chown -R go:go /var/lib/go-agent/\n" +

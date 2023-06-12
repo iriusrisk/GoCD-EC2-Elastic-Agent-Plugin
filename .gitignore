@@ -3,6 +3,9 @@
 out/
 *.iml
 
+#VSC
+.vscode/
+
 # Gradle
 .gradle
 build/
