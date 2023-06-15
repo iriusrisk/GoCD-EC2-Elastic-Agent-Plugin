@@ -76,8 +76,18 @@ public class Ec2Instance {
                 "echo \"wrapper.app.parameter.103=NONE\" >> /usr/share/go-agent/wrapper-config/wrapper-properties.conf\n" +
                 "mkdir -p /var/lib/go-agent/config\n" +
                 "echo \"agent.auto.register.key=" + request.autoRegisterKey() + "\" > /var/lib/go-agent/config/autoregister.properties\n" +
-                "echo \"agent.auto.register.hostname=EA_$(curl http://169.254.169.254/latest/meta-data/instance-id)\" >> /var/lib/go-agent/config/autoregister.properties\n" +
-                "echo \"agent.auto.register.elasticAgent.agentId=$(curl http://169.254.169.254/latest/meta-data/instance-id)\" >> /var/lib/go-agent/config/autoregister.properties\n" +
+
+                "HTTP_CODE=`curl -I http://169.254.169.254 | head -n 1 | cut -d$' ' -f2`\n" +
+                "if [[ HTTP_CODE -eq 200 ]];\n" +
+                "then\n" +
+                "INSTANCE_ID=`curl http://169.254.169.254/latest/meta-data/instance-id`\n" +
+                "else\n" +
+                "TOKEN=`curl -X PUT 'http://169.254.169.254/latest/api/token' -H 'X-aws-ec2-metadata-token-ttl-seconds: 21600'`\n" +
+                "INSTANCE_ID=`curl -H \"X-aws-ec2-metadata-token: $TOKEN\" http://169.254.169.254/latest/meta-data/instance-id`\n" +
+                "fi\n" +
+
+                "echo \"agent.auto.register.hostname=EA_$INSTANCE_ID\" >> /var/lib/go-agent/config/autoregister.properties\n" +
+                "echo \"agent.auto.register.elasticAgent.agentId=$INSTANCE_ID\" >> /var/lib/go-agent/config/autoregister.properties\n" +
                 "echo \"agent.auto.register.elasticAgent.pluginId=" + Constants.PLUGIN_ID + "\" >> /var/lib/go-agent/config/autoregister.properties\n" +
                 "chown -R go:go /var/log/go-agent/\n" +
                 "chown -R go:go /var/lib/go-agent/\n" +
