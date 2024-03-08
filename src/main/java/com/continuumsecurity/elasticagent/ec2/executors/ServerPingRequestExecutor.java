@@ -98,6 +98,7 @@ public class ServerPingRequestExecutor implements RequestExecutor {
         Collection<Agent> toBeDeleted = agents.findInstancesToTerminate();
 
         for (Agent agent : toBeDeleted) {
+            LOG.info("INSTANCE_TERMINATION|DISABLED_AGENTS|instance_id={}&agent_state={}", agent.elasticAgentId(), agent.agentState().toString());
             ec2AgentInstances.terminate(agent.elasticAgentId(), clusterProfileProperties);
         }
 

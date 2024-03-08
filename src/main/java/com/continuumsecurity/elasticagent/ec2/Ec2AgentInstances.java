@@ -147,6 +147,7 @@ public class Ec2AgentInstances implements AgentInstances<Ec2Instance> {
             }
 
             if (clock.now().isAfter(instance.createdAt().plus(clusterProfileProperties.getAutoRegisterPeriod()))) {
+                LOG.info("INSTANCE_MARKED_FOR_TERMINATION|AUTO_REGISTER_PERIOD_TIMEOUT|instance_id={}", instance.id());
                 oldAgents.add(agent);
             }
         }
