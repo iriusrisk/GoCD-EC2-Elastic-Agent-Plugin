@@ -60,6 +60,10 @@ public class Ec2AgentInstances implements AgentInstances<Ec2Instance> {
             if (semaphore.tryAcquire()) {
                 pluginRequest.addServerHealthMessage(messages);
                 Ec2Instance instance = Ec2Instance.create(request, settings, consoleLogAppender);
+                if (instance == null) {
+                    semaphore.release();
+                    throw new RuntimeException("Failed to create EC2 instance. Check plugin logs for details.");
+                }
                 register(instance);
                 jobsWaitingForAgentCreation.remove(request.jobIdentifier());
                 return instance;
