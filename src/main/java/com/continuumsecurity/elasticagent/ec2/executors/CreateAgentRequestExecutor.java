@@ -49,7 +49,7 @@ public class CreateAgentRequestExecutor implements RequestExecutor {
             pluginRequest.appendToConsoleLog(request.jobIdentifier(), message);
         };
 
-        consoleLogAppender.accept(String.format("Received request to create an instance for %s at %s", request.jobIdentifier().getRepresentation(), new DateTime().toString("yyyy-MM-dd HH:mm:ss ZZ")));
+        consoleLogAppender.accept(String.format("Received request to create an instance for %s in env %s at %s", request.jobIdentifier().getRepresentation(), request.hasEnvironment() ? request.environment() : "<default>", new DateTime().toString("yyyy-MM-dd HH:mm:ss ZZ")));
 
         try {
             agentInstances.create(request, pluginRequest, consoleLogAppender);

@@ -26,7 +26,8 @@ import com.google.gson.annotations.SerializedName;
 import org.joda.time.Period;
 import software.amazon.awssdk.regions.Region;
 
-import static org.apache.commons.lang3.StringUtils.isBlank;
+import static com.continuumsecurity.elasticagent.ec2.utils.Util.isBlank;
+
 
 public class PluginSettings {
     public static final Gson GSON = new GsonBuilder()
@@ -149,7 +150,7 @@ public class PluginSettings {
         Region newRegion = Region.of(configuredRegion);
 
         if (!Region.regions().contains(newRegion)) {
-            throw new IllegalArgumentException("Region does not exist.");
+            throw new IllegalArgumentException("Region " + newRegion + " does not exist.");
         }
 
         return newRegion;

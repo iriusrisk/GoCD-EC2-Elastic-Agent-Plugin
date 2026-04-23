@@ -18,7 +18,7 @@
 
 package com.continuumsecurity.elasticagent.ec2.executors;
 
-import org.apache.commons.lang3.StringUtils;
+import static com.continuumsecurity.elasticagent.ec2.utils.Util.isBlank;
 
 public class NonBlankField extends Field {
 
@@ -28,7 +28,7 @@ public class NonBlankField extends Field {
 
     @Override
     public String doValidate(String input) {
-        if (StringUtils.isBlank(input)) {
+        if (isBlank(input)) {
             return this.displayName + " must not be blank.";
         }
         return null;

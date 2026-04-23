@@ -80,14 +80,14 @@ public class GetProfileMetadataExecutorTest {
                 "    }\n" +
                 "  },\n" +
                 "  {\n" +
-                "    \"key\": \"ec2_instance_profile\",\n" +
+                "    \"key\": \"ec2_user_data\",\n" +
                 "    \"metadata\": {\n" +
                 "      \"required\": false,\n" +
                 "      \"secure\": false\n" +
                 "    }\n" +
                 "  },\n" +
                 "  {\n" +
-                "    \"key\": \"ec2_user_data\",\n" +
+                "    \"key\": \"ec2_instance_profile\",\n" +
                 "    \"metadata\": {\n" +
                 "      \"required\": false,\n" +
                 "      \"secure\": false\n" +

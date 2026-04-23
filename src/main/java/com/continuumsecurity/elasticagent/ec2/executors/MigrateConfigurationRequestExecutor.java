@@ -20,7 +20,6 @@ import com.continuumsecurity.elasticagent.ec2.*;
 import com.continuumsecurity.elasticagent.ec2.requests.MigrateConfigurationRequest;
 import com.thoughtworks.go.plugin.api.response.DefaultGoPluginApiResponse;
 import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -29,6 +28,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.continuumsecurity.elasticagent.ec2.Ec2Plugin.LOG;
+import static com.continuumsecurity.elasticagent.ec2.utils.Util.isBlank;
 
 public class MigrateConfigurationRequestExecutor implements RequestExecutor {
 
@@ -111,6 +111,6 @@ public class MigrateConfigurationRequestExecutor implements RequestExecutor {
     }
 
     private boolean arePluginSettingsConfigured(PluginSettings pluginSettings) {
-        return !StringUtils.isBlank(pluginSettings.getGoServerUrl());
+        return !isBlank(pluginSettings.getGoServerUrl());
     }
 }

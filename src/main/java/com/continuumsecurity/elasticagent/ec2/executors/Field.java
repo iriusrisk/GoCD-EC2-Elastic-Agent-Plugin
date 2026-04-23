@@ -21,10 +21,6 @@ package com.continuumsecurity.elasticagent.ec2.executors;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
-import org.apache.commons.lang3.StringUtils;
-
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Field {
@@ -58,16 +54,6 @@ public class Field {
         this.required = required;
         this.secure = secure;
         this.displayOrder = displayOrder;
-    }
-
-    public Map<String, String> validate(String input) {
-        HashMap<String, String> result = new HashMap<>();
-        String validationError = doValidate(input);
-        if (StringUtils.isNotBlank(validationError)) {
-            result.put("key", key);
-            result.put("message", validationError);
-        }
-        return result;
     }
 
     protected String doValidate(String input) {

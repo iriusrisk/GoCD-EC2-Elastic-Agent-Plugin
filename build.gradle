@@ -18,11 +18,10 @@
 
 plugins {
     id 'java'
-    id "io.spring.dependency-management" version "1.0.6.RELEASE"
 }
 
 group 'com.continuumsecurity.elasticagent'
-version '2.2.2'
+version '2.3.0'
 
 // these values that go into plugin.xml
 project.ext.pluginDesc = [
@@ -35,42 +34,51 @@ project.ext.pluginDesc = [
         vendorUrl  : 'https://github.com/continuumsecurity/GoCD-EC2-Elastic-Agent-Plugin'
 ]
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+sourceCompatibility = 11
+targetCompatibility = 11
 
 repositories {
-    jcenter()
     mavenCentral()
 }
 
 sourceSets {
     test {
         java {
-            compileClasspath += configurations.compileOnly
-            runtimeClasspath += configurations.compileOnly
             resources.srcDirs += ['src/main/resource-templates']
         }
     }
 }
 
+ext {
+    deps = [
+        gocdPluginApi: 'cd.go.plugin:go-plugin-api:23.5.0',
+    ]
+}
+
 dependencies {
-    compileOnly group: 'cd.go.plugin', name: 'go-plugin-api', version: '19.8.0'
+    compileOnly project.deps.gocdPluginApi
 
-    compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.8.1'
-    compile group: 'com.google.code.gson', name: 'gson', version: '2.8.5'
-    compile group: 'com.google.guava', name: 'guava', version: '23.0'
-    compile group: 'joda-time', name: 'joda-time', version: '2.10.3'
-    compile group: 'commons-io', name: 'commons-io', version: '2.6'
-    compile group: 'org.freemarker', name: 'freemarker', version: '2.3.29'
-    compile group: 'software.amazon.awssdk', name: 'ec2', version: '2.10.30'
+    implementation group: 'com.google.code.gson', name: 'gson', version: '2.10.1'
+    implementation(group: 'com.google.guava', name: 'guava', version: '33.0.0-jre') {
+        // see https://github.com/google/guava/pull/6606
+        exclude(module: 'listenablefuture')
+        exclude(module: 'error_prone_annotations')
+        exclude(module: 'checker-qual')
+        exclude(module: 'jsr305')
+    }
+    implementation group: 'joda-time', name: 'joda-time', version: '2.12.7'
+    implementation group: 'org.freemarker', name: 'freemarker', version: '2.3.32'
+    implementation group: 'software.amazon.awssdk', name: 'ec2', version: '2.25.38'
 
-    testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.3.2'
-    testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.3.2'
-    testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: '5.3.2'
-    testCompile group: 'org.hamcrest', name: 'hamcrest-library', version: '2.1'
-    testCompile group: 'org.mockito', name: 'mockito-core', version: '3.0.0'
-    testCompile group: 'org.mockito', name: 'mockito-junit-jupiter', version: '3.0.0'
-    testCompile group: 'org.skyscreamer', name: 'jsonassert', version: '1.5.0'
+    testImplementation project.deps.gocdPluginApi
+    testImplementation platform('org.junit:junit-bom:5.10.2')
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api'
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine'
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params'
+    testImplementation group: 'org.hamcrest', name: 'hamcrest', version: '2.2'
+    testImplementation group: 'org.mockito', name: 'mockito-core', version: '5.11.0'
+    testImplementation group: 'org.mockito', name: 'mockito-junit-jupiter', version: '5.11.0'
+    testImplementation group: 'org.skyscreamer', name: 'jsonassert', version: '1.5.1'
 }
 
 processResources {
@@ -112,7 +120,7 @@ test {
 }
 
 jar {
-    from(configurations.compile) {
+    from(configurations.runtimeClasspath) {
         into "lib/"
     }
 

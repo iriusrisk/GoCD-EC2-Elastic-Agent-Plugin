@@ -23,12 +23,11 @@ import com.continuumsecurity.elasticagent.ec2.models.InstanceStatusReport;
 import com.continuumsecurity.elasticagent.ec2.models.JobIdentifier;
 import com.continuumsecurity.elasticagent.ec2.models.StatusReport;
 import com.continuumsecurity.elasticagent.ec2.requests.CreateAgentRequest;
-import org.apache.commons.lang3.StringUtils;
+import com.google.common.base.Joiner;
 import org.joda.time.Period;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ec2.model.*;
 
-import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
@@ -187,7 +186,7 @@ public class Ec2AgentInstances implements AgentInstances<Ec2Instance> {
                     Map<String, String> properties = new HashMap<>();
                     properties.put("ec2_ami", instance.imageId());
                     properties.put("ec2_instance_type", instance.instanceTypeAsString());
-                    properties.put("ec2_sg", StringUtils.join(instance.securityGroups(), ","));
+                    properties.put("ec2_sg", Joiner.on(',').join(instance.securityGroups()));
                     properties.put("ec2_subnets", instance.subnetId());
                     properties.put("ec2_key", instance.keyName());
 
@@ -312,7 +311,6 @@ public class Ec2AgentInstances implements AgentInstances<Ec2Instance> {
         instances.put(instance.id(), instance);
     }
 
-    @Nullable
     private static String getTag(List<Tag> tags, String key) {
         for (Tag tag : tags) {
             if (tag.key().equals(key)) {

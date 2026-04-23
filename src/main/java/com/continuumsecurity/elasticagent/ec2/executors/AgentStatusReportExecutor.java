@@ -33,10 +33,10 @@ import com.thoughtworks.go.plugin.api.response.DefaultGoPluginApiResponse;
 import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
-import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 
+import static com.continuumsecurity.elasticagent.ec2.utils.Util.isBlank;
 import static java.lang.String.format;
 
 public class AgentStatusReportExecutor {
@@ -60,7 +60,7 @@ public class AgentStatusReportExecutor {
         LOG.info(format("[status-report] Generating status report for agent: %s with job: %s", elasticAgentId, jobIdentifier));
 
         try {
-            if (StringUtils.isNotBlank(elasticAgentId)) {
+            if (!isBlank(elasticAgentId)) {
                 return getStatusReportUsingElasticAgentId(elasticAgentId);
             }
             return getStatusReportUsingJobIdentifier(jobIdentifier);

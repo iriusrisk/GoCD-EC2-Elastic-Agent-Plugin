@@ -18,15 +18,15 @@
 
 package com.continuumsecurity.elasticagent.ec2.requests;
 
-import com.continuumsecurity.elasticagent.ec2.*;
+import com.continuumsecurity.elasticagent.ec2.AgentInstances;
+import com.continuumsecurity.elasticagent.ec2.ClusterProfileProperties;
+import com.continuumsecurity.elasticagent.ec2.PluginRequest;
+import com.continuumsecurity.elasticagent.ec2.RequestExecutor;
 import com.continuumsecurity.elasticagent.ec2.executors.CreateAgentRequestExecutor;
 import com.continuumsecurity.elasticagent.ec2.models.JobIdentifier;
-import org.apache.commons.lang3.StringUtils;
+import com.continuumsecurity.elasticagent.ec2.utils.Util;
 
-import java.io.IOException;
-import java.io.StringWriter;
 import java.util.Map;
-import java.util.Properties;
 
 import static com.continuumsecurity.elasticagent.ec2.Ec2Plugin.GSON;
 
@@ -34,6 +34,7 @@ public class CreateAgentRequest {
 
     private String autoRegisterKey;
     private JobIdentifier jobIdentifier;
+    private String environment;
     private Map<String, String> elasticAgentProfileProperties;
     private ClusterProfileProperties clusterProfileProperties;
 
@@ -43,11 +44,13 @@ public class CreateAgentRequest {
     public CreateAgentRequest(String autoRegisterKey,
                               Map<String, String> elasticAgentProfileProperties,
                               JobIdentifier jobIdentifier,
-                              Map<String, String> clusterProfileProperties) {
+                              Map<String, String> clusterProfileProperties,
+                              String environment) {
         this.autoRegisterKey = autoRegisterKey;
-        this.elasticAgentProfileProperties = elasticAgentProfileProperties;
         this.jobIdentifier = jobIdentifier;
+        this.elasticAgentProfileProperties = elasticAgentProfileProperties;
         this.clusterProfileProperties = ClusterProfileProperties.fromConfiguration(clusterProfileProperties);
+        this.environment = environment;
     }
 
     public CreateAgentRequest(String autoRegisterKey,
@@ -68,39 +71,20 @@ public class CreateAgentRequest {
         return jobIdentifier;
     }
 
+    public String environment() {
+        return environment;
+    }
+
+    public boolean hasEnvironment() {
+        return !Util.isBlank(environment);
+    }
+
     public static CreateAgentRequest fromJSON(String json) {
         return GSON.fromJson(json, CreateAgentRequest.class);
     }
 
     public RequestExecutor executor(AgentInstances agentInstances, PluginRequest pluginRequest) {
         return new CreateAgentRequestExecutor(this, agentInstances, pluginRequest);
-    }
-
-    public Properties autoregisterProperties(String elasticAgentId) {
-        Properties properties = new Properties();
-
-        if (StringUtils.isNotBlank(autoRegisterKey)) {
-            properties.put("agent.auto.register.key", autoRegisterKey);
-        }
-
-        properties.put("agent.auto.register.elasticAgent.agentId", elasticAgentId);
-        properties.put("agent.auto.register.elasticAgent.pluginId", Constants.PLUGIN_ID);
-
-        return properties;
-    }
-
-    public String autoregisterPropertiesAsEnvironmentVars(String elasticAgentId) {
-        Properties properties = autoregisterProperties(elasticAgentId);
-
-        StringWriter writer = new StringWriter();
-
-        try {
-            properties.store(writer, "");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        return writer.toString();
     }
 
     public Map<String, String> properties() {

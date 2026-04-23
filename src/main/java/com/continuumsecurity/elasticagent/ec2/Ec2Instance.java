@@ -76,6 +76,7 @@ public class Ec2Instance {
                 "echo \"wrapper.app.parameter.103=NONE\" >> /usr/share/go-agent/wrapper-config/wrapper-properties.conf\n" +
                 "mkdir -p /var/lib/go-agent/config\n" +
                 "echo \"agent.auto.register.key=" + request.autoRegisterKey() + "\" > /var/lib/go-agent/config/autoregister.properties\n" +
+                (request.hasEnvironment() ? "echo \"agent.auto.register.environments=" + request.environment().trim() + "\" > /var/lib/go-agent/config/autoregister.properties\n" : "") +
 
                 "HTTP_CODE=`curl -I http://169.254.169.254 | head -n 1 | cut -d$' ' -f2`\n" +
                 "if [[ HTTP_CODE -eq 200 ]];\n" +
@@ -93,8 +94,13 @@ public class Ec2Instance {
                 "chown -R go:go /var/lib/go-agent/\n" +
                 "chown -R go:go /usr/share/go-agent/\n";
 
-        if (request.properties().get("ec2_user_data") != null) {
-            userdata += request.properties().get("ec2_user_data") + "\n";
+        String additionalUserData = request.properties().get("ec2_user_data");
+        if (additionalUserData != null) {
+            userdata += additionalUserData + "\n";
+
+            if (additionalUserData.contains("agent.auto.register.environments")) {
+                consoleLogAppender.accept("The instance user data for this profile may contain an overridden GoCD environment. This may cause issues with GoCD, and should no longer be required with `2.3.0+` of the plugin.");
+            }
         }
         userdata += "systemctl start go-agent.service\n";
 

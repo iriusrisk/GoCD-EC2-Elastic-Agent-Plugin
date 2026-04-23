@@ -23,10 +23,9 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.Expose;
 
-import org.apache.commons.lang3.StringUtils;
-
 import java.util.Objects;
 
+import static com.continuumsecurity.elasticagent.ec2.utils.Util.isBlank;
 import static java.text.MessageFormat.format;
 
 public class JobIdentifier {
@@ -103,7 +102,7 @@ public class JobIdentifier {
     }
 
     public String getRepresentation() {
-        if (StringUtils.isBlank(representation)) {
+        if (isBlank(representation)) {
             this.representation = format("{0}/{1}/{2}/{3}/{4}", pipelineName, pipelineCounter, stageName, stageCounter, jobName);
         }
         return representation;

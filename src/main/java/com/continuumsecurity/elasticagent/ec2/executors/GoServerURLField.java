@@ -22,7 +22,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 
 import static com.continuumsecurity.elasticagent.ec2.executors.GetClusterProfileMetadataExecutor.GO_SERVER_URL;
-import static org.apache.commons.lang3.StringUtils.isBlank;
+import static com.continuumsecurity.elasticagent.ec2.utils.Util.isBlank;
 
 public class GoServerURLField extends Field {
 

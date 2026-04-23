@@ -31,11 +31,11 @@ import static org.mockito.Mockito.*;
 public class CreateAgentRequestExecutorTest {
 
     @Test
-    public void shouldAskDockerContainersToCreateAnAgent() throws Exception {
+    public void shouldAskAgentInstancesToCreateAnAgent() throws Exception {
         final HashMap<String, String> elasticAgentProfileProperties = new HashMap<>();
         elasticAgentProfileProperties.put("Image", "image1");
         final JobIdentifier jobIdentifier = new JobIdentifier("p1", 1L, "l1", "s1", "1", "j1", 1L);
-        CreateAgentRequest request = new CreateAgentRequest("key1", elasticAgentProfileProperties, jobIdentifier, new HashMap<>());
+        CreateAgentRequest request = new CreateAgentRequest("key1", elasticAgentProfileProperties, jobIdentifier, new HashMap<>(), "my_env");
 
         AgentInstances<Ec2Instance> agentInstances = mock(Ec2AgentInstances.class);
         PluginRequest pluginRequest = mock(PluginRequest.class);
@@ -50,7 +50,7 @@ public class CreateAgentRequestExecutorTest {
         final HashMap<String, String> elasticAgentProfileProperties = new HashMap<>();
         elasticAgentProfileProperties.put("Image", "image1");
         final JobIdentifier jobIdentifier = new JobIdentifier("p1", 1L, "l1", "s1", "1", "j1", 1L);
-        CreateAgentRequest request = new CreateAgentRequest("key1", elasticAgentProfileProperties, jobIdentifier, new HashMap<>());
+        CreateAgentRequest request = new CreateAgentRequest("key1", elasticAgentProfileProperties, jobIdentifier, new HashMap<>(), "my_env");
 
         AgentInstances<Ec2Instance> agentInstances = mock(Ec2AgentInstances.class);
         PluginRequest pluginRequest = mock(PluginRequest.class);

@@ -8,7 +8,6 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ec2.model.*;
 
-import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -119,7 +118,6 @@ public class Test {
 
     }
 
-    @Nullable
     private static String getTag(List<Tag> tags, String key) {
         for (Tag tag : tags) {
             if (tag.key().equals(key)) {

@@ -17,7 +17,7 @@
 package com.continuumsecurity.elasticagent.ec2.executors;
 
 
-import static org.apache.commons.lang3.StringUtils.isBlank;
+import static com.continuumsecurity.elasticagent.ec2.utils.Util.isBlank;
 
 public class NumberMetadata extends Metadata {
 

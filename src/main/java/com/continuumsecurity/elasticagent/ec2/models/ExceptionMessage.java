@@ -22,7 +22,7 @@ import java.io.Closeable;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import static org.apache.commons.lang3.StringUtils.isBlank;
+import static com.continuumsecurity.elasticagent.ec2.utils.Util.isBlank;
 
 public class ExceptionMessage {
     private final Throwable throwable;
