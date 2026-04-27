@@ -60,11 +60,19 @@
     </div>
 
     <div class="columns medium-4 large-3">
+        <label ng-class="{'is-invalid-label': GOINPUTNAME[ec2_tags].$error.server}">Tags (comma-separated Key=Value pairs):</label>
+        <input ng-class="{'is-invalid-input': GOINPUTNAME[ec2_tags].$error.server}" type="text" ng-model="ec2_tags" ng-required="false"/>
+        <span class="form_error form-error" ng-class="{'is-visible': GOINPUTNAME[ec2_tags].$error.server}"
+              ng-show="GOINPUTNAME[ec2_tags].$error.server">{{GOINPUTNAME[ec2_tags].$error.server}}</span>
+    </div>
+
+    <div class="columns medium-4 large-3">
         <label ng-class="{'is-invalid-label': GOINPUTNAME[ec2_user_data].$error.server}">User data:</label>
-        <textarea ng-class="{'is-invalid-input': GOINPUTNAME[ec2_user_data].$error.server}" type="text" rows="3" ng-model="ec2_user_data" ng-required="false"/>
+        <textarea ng-class="{'is-invalid-input': GOINPUTNAME[ec2_user_data].$error.server}" type="text" rows="3" ng-model="ec2_user_data" ng-required="false"></textarea>
         <span class="form_error form-error" ng-class="{'is-visible': GOINPUTNAME[ec2_user_data].$error.server}"
               ng-show="GOINPUTNAME[ec2_user_data].$error.server">{{GOINPUTNAME[ec2_user_data].$error.server}}</span>
     </div>
+
 
 
 </div>
