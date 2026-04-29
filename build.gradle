@@ -22,7 +22,7 @@ plugins {
 }
 
 group 'com.continuumsecurity.elasticagent'
-version '2.2.2'
+version '2.3.0'
 
 // these values that go into plugin.xml
 project.ext.pluginDesc = [

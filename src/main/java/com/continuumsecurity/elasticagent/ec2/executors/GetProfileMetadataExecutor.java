@@ -37,6 +37,7 @@ public class GetProfileMetadataExecutor implements RequestExecutor {
     private static final Metadata EC2_KEY = new Metadata("ec2_key", true, false);
     private static final Metadata EC2_USER_DATA = new Metadata("ec2_user_data", false, false);
     private static final Metadata EC2_INSTANCE_PROFILE = new Metadata("ec2_instance_profile", false, false);
+    private static final Metadata EC2_TAGS = new Metadata("ec2_tags", false, false);
 
     static final List<Metadata> FIELDS = new ArrayList<>();
 
@@ -46,8 +47,9 @@ public class GetProfileMetadataExecutor implements RequestExecutor {
         FIELDS.add(EC2_SECURITY_GROUPS);
         FIELDS.add(EC2_SUBNETS);
         FIELDS.add(EC2_KEY);
-        FIELDS.add(EC2_USER_DATA);
         FIELDS.add(EC2_INSTANCE_PROFILE);
+        FIELDS.add(EC2_TAGS);
+        FIELDS.add(EC2_USER_DATA);
     }
 
     @Override

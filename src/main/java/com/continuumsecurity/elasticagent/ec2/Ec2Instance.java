@@ -64,6 +64,27 @@ public class Ec2Instance {
         return jobIdentifier;
     }
 
+    /**
+     * Parses "Key=Value, Key2=Value2" into Tag objects.
+     */
+    static private List<Tag> parse(String ec2Tags) {
+        List<Tag> tags = new ArrayList<>();
+        if (ec2Tags == null || ec2Tags.trim().isEmpty()) {
+            return tags;
+        }
+        for (String pair : ec2Tags.split("\\s*,\\s*")) {
+            if (pair.trim().isEmpty()) {
+                continue;
+            }
+            String[] kv = pair.split("=", 2);
+            if (kv.length == 2 && !kv[0].trim().isEmpty()) {
+                tags.add(Tag.builder().key(kv[0].trim()).value(kv[1].trim()).build());
+            }
+        }
+        return tags;
+    }
+
+
     public static Ec2Instance create(CreateAgentRequest request, PluginSettings settings, ConsoleLogAppender consoleLogAppender) {
 
         LOG.debug("Creating new instance for " + request.jobIdentifier().getRepresentation());
@@ -152,25 +173,38 @@ public class Ec2Instance {
                         .key("JsonJobIdentifier")
                         .value(request.jobIdentifier().toJson())
                         .build();
+                List<Tag> customTags = parse(request.properties().get("ec2_tags"));
 
-                TagSpecification tagSpecification = TagSpecification.builder()
-                        .tags(
-                                tagName,
-                                tagType,
-                                tagPipelineName,
-                                tagPipelineCounter,
-                                tagPipelineLabel,
-                                tagStageName,
-                                tagStageCounter,
-                                tagJobName,
-                                tagJobId,
-                                tagJsonJobIdentifier
-                        )
+                List<Tag> instanceTags = new ArrayList<>(Arrays.asList(
+                        tagName,
+                        tagType,
+                        tagPipelineName,
+                        tagPipelineCounter,
+                        tagPipelineLabel,
+                        tagStageName,
+                        tagStageCounter,
+                        tagJobName,
+                        tagJobId,
+                        tagJsonJobIdentifier));
+                if (!customTags.isEmpty()) {
+                    instanceTags.addAll(customTags);
+                }
+
+
+                List<TagSpecification> tagSpecs = new ArrayList<>();
+                tagSpecs.add(TagSpecification.builder()
+                        .tags(instanceTags)
                         .resourceType("instance")
-                        .build();
+                        .build());
+                if (!customTags.isEmpty()) {
+                    tagSpecs.add(TagSpecification.builder()
+                            .tags(customTags)
+                            .resourceType("volume")
+                            .build());
+                }
 
                 String iamProfileName = (request.properties().get("ec2_instance_profile") == null) ? "" : request.properties().get("ec2_instance_profile");
-                
+
                 RunInstancesRequest runInstancesRequest = RunInstancesRequest.builder()
                         .imageId(request.properties().get("ec2_ami"))
                         .instanceType(InstanceType.fromValue(request.properties().get("ec2_instance_type")))
@@ -181,7 +215,7 @@ public class Ec2Instance {
                         .subnetId(subnets.get(i))
                         .iamInstanceProfile(IamInstanceProfileSpecification.builder().name(iamProfileName).build())
                         .userData(Base64.getEncoder().encodeToString(userdata.getBytes()))
-                        .tagSpecifications(tagSpecification)
+                        .tagSpecifications(tagSpecs)
                         .build();
 
                 response = ec2.runInstances(runInstancesRequest);
